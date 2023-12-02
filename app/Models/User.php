@@ -26,8 +26,10 @@ class User extends Authenticatable
         'password',
         'is_admin',
         'first_login',
+        'otp',
         'password_updated_at',
         'profile_updated_at',
+        'otp_generated_at',
     ];
 
     /**

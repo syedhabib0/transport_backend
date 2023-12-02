@@ -19,10 +19,12 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('otp')->nullable();
             $table->tinyInteger('is_admin')->default(0);
             $table->boolean('first_login')->default(true);
             $table->timestamp('password_updated_at')->nullable();
             $table->timestamp('profile_updated_at')->nullable();
+            $table->timestamp('otp_generated_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
