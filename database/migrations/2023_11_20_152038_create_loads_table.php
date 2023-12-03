@@ -13,12 +13,17 @@ return new class extends Migration
     {
         Schema::create('loads', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('driver_id')->constrained('drivers');
+            $table->foreignId('user_id')->constrained('users');
+            $table->foreignId('driver_id')->nullable()->constrained('drivers');
             $table->string('load_type');
             $table->string('weight');
             $table->string('destination');
+            $table->string('pickup_location');
+            $table->string('dropoff_location');
+            $table->date('pickup_date');
             $table->string('delivery_date');
             $table->string('status')->default('available');
+            $table->decimal('driver_earnings', 8, 2)->nullable(); // Add this line
             $table->timestamps();
         });
     }

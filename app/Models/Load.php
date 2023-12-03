@@ -10,12 +10,17 @@ class Load extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'driver_id',
         'load_type',
         'weight',
         'destination',
+        'pickup_location',
+        'dropoff_location',
+        'pickup_date',
         'delivery_date',
         'status',
+        'driver_earnings',
     ];
 
     public function driver()
