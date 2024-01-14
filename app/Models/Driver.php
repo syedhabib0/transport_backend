@@ -4,10 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use MatanYadaev\EloquentSpatial\SpatialBuilder;
-use MatanYadaev\EloquentSpatial\Objects\Point;
-use MatanYadaev\EloquentSpatial\Objects\Polygon;
-use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
+// use MatanYadaev\EloquentSpatial\SpatialBuilder;
+// use MatanYadaev\EloquentSpatial\Objects\Point;
+// use MatanYadaev\EloquentSpatial\Objects\Polygon;
+// use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
 
 
 /**
@@ -17,7 +17,8 @@ use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
  */
 class Driver extends Model
 {
-    use HasFactory, HasSpatial;
+    use HasFactory;
+    // HasSpatial;
 
     protected $fillable = [
         'user_id',
@@ -36,10 +37,10 @@ class Driver extends Model
         'area' => 'polygon',
     ];
 
-    protected $casts = [
-        'location' => Point::class,
-        'area' => Polygon::class,
-    ];
+    // protected $casts = [
+    //     'location' => Point::class,
+    //     'area' => Polygon::class,
+    // ];
 
 
     public function user()
@@ -87,9 +88,9 @@ class Driver extends Model
         return $this->hasMany(Load::class);
     }
 
-    // Broadcasting real-time location
-    protected $dispatchesEvents = [
-        'updated' => \App\Events\DriverLocationUpdated::class,
-    ];
+    // // Broadcasting real-time location
+    // protected $dispatchesEvents = [
+    //     'updated' => \App\Events\DriverLocationUpdated::class,
+    // ];
 }
 
