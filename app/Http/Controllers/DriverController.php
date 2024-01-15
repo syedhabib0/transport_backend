@@ -6,13 +6,17 @@ use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\DriversImport; // Replace with your import class
 use App\Exceptions\ValidationException;
+use App\Models\Profile;
 use App\Models\User;
+use App\Notifications\DriverImportNotification;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class DriverController extends Controller
 {
     public function create(Request $request)
     {
-        dd($request);
+        // dd($request);
         // Validate the request
         // $request->validate([
         //     'first_name' => 'required|string|max:255',
@@ -33,17 +37,32 @@ class DriverController extends Controller
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            // 'phone_number' => ['required', 'number', 'max:255'],
         ]);
 
-        $userData = User::create([
+        $password = Str::random(8);
+
+        $user = User::create([
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'email' => $request->email,
-            'password' => '',
+            'password' => Hash::make($password), // Auto-generate password
         ]);
 
+        // Create a new profile associated with the user
+        $profile = new Profile([
+            'phone' => $request->phone_number,
+            // Add other profile fields as needed
+        ]);
 
-        if($userData){
+        $user->profile()->save($profile);
+
+
+        if($user){
+
+            // Send password reset notification
+            $user->notify(new DriverImportNotification($user, $password));
+
             // redirect('/drivers');
             return response()->json(['message' => 'Driver created successfully']);
         }else{
@@ -53,28 +72,109 @@ class DriverController extends Controller
 
     }
 
+    // public function uploadBulk(Request $request)
+    // {
+    //     $request->validate([
+    //         'file' => 'required|mimes:xlsx,csv|max:100000', // 100 MB
+    //     ]);
+
+    //     $file = $request->file('file');
+
+    //     // Validate column names
+    //     $import = new DriversImport(); // Replace with your import class
+    //     $headings = $import->toArray($file)->toArray()[0][0];
+
+    //     $requiredColumns = ['First Name', 'Last Name', 'Email', 'Phone Number'];
+    //     foreach ($requiredColumns as $column) {
+    //         if (!in_array($column, $headings)) {
+    //             throw new ValidationException("Column '$column' is required.");
+    //         }
+    //     }
+
+    //     // Process the file using Maatwebsite\Excel
+    //     Excel::import($import, $file);
+
+    //     return response()->json(['message' => 'File uploaded and processed successfully.']);
+    // }
+
     public function uploadBulk(Request $request)
     {
+        // dd($request->all());
         $request->validate([
-            'file' => 'required|mimes:xlsx,csv|max:100000', // 100 MB
+            'file' => 'required|mimes:xlsx,csv|max:102400', // Validate the file input
         ]);
 
-        $file = $request->file('file');
+        try {
+            // Import data from the uploaded file
+            $import = new DriversImport();
+            $importedData = Excel::toArray($import, $request->file('file'));
 
-        // Validate column names
-        $import = new DriversImport(); // Replace with your import class
-        $headings = $import->toArray($file)->toArray()[0][0];
+            // print_r($importedData[0]);
 
-        $requiredColumns = ['First Name', 'Last Name', 'Email', 'Phone Number'];
-        foreach ($requiredColumns as $column) {
-            if (!in_array($column, $headings)) {
-                throw new ValidationException("Column '$column' is required.");
+            // Process each row of data
+            foreach ($importedData[0] as $row) {
+                // Your validation and transformation logic
+                // $validatedData = $this->validateAndTransformData($row);
+
+                $password = Str::random(8);
+
+                // Create a new user
+                $user = User::create([
+                    'first_name' => $row['first_name'],
+                    'last_name' => $row['last_name'],
+                    'email' => $row['email'],
+                    'password' => Hash::make($password), // Auto-generate password
+                ]);
+
+                // Create a new profile associated with the user
+                $profile = new Profile([
+                    'phone' => $row['phone_number'],
+                    // Add other profile fields as needed
+                ]);
+
+                $user->profile()->save($profile);
+
+                if ($user) {
+                    // Send password reset notification
+                    $user->notify(new DriverImportNotification($user, $password));
+                
+                //     return response()->json(['message' => 'Driver created successfully', 'user' => $user]);
+                // } else {
+                //     return response()->json(['error' => 'Some error occurred on the server. Driver not created.', 'data' => $row], 500);
+                }
             }
+
+            return response()->json(['message' => 'Bulk upload successful']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Bulk upload failed', 'message' => $e->getMessage()], 500);
         }
+    }
 
-        // Process the file using Maatwebsite\Excel
-        Excel::import($import, $file);
+    private function validateAndTransformData(array $data)
+    {
+        // Your validation and transformation logic
+        $username = $data["First Name"] . '_' . $data["Last Name"]; 
+        $profilePictureName = $this->generateProfilePictureName($username, $data['Profile Picture']);
 
-        return response()->json(['message' => 'File uploaded and processed successfully.']);
+        $validatedData = [
+            'first_name' => $data['First Name'],
+            'last_name' => $data['Last Name'],
+            'profile_picture' => $profilePictureName,
+            'email' => $data['Email'],
+            'phone_number' => $data['Phone Number'],
+        ];
+
+        // Additional validation or data transformation if needed
+
+        return $validatedData;
+    }
+
+    private function generateProfilePictureName($username, $originalName)
+    {
+        // Your logic to generate a unique profile picture name
+        $timestamp = now()->timestamp;
+        $extension = pathinfo($originalName, PATHINFO_EXTENSION);
+
+        return "{$username}_{$timestamp}.{$extension}";
     }
 }
