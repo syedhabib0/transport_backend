@@ -6,14 +6,38 @@ use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\DriversImport; // Replace with your import class
 use App\Exceptions\ValidationException;
+use App\Models\Driver;
 use App\Models\Profile;
 use App\Models\User;
 use App\Notifications\DriverImportNotification;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 class DriverController extends Controller
 {
+    public function index(Request $request){
+        // Retrieve the "driver" role
+        $driverRole = Role::where('name', 'driver')->first();
+
+        // Check if the role exists
+        if ($driverRole) {
+            $perPage = $request->get('per_page', 10); // You can adjust the default number of items per page
+            // Retrieve all users with the "driver" role
+            $drivers = $driverRole->users()->with('profile', 'driver')->paginate($perPage);
+            // print_r($drivers);
+
+            // You can now use $drivers as a collection of users with the "driver" role
+            return response()->json([
+                'drivers' => $drivers->items(),
+                'current_page' => $drivers->currentPage(),
+                'last_page' => $drivers->lastPage(),
+            ]);
+        } else {
+            return response()->json(['error' => 'Role not found'], 404);
+        }
+    }
+
     public function create(Request $request)
     {
         // dd($request);
@@ -48,6 +72,10 @@ class DriverController extends Controller
             'email' => $request->email,
             'password' => Hash::make($password), // Auto-generate password
         ]);
+        
+        // Assign the "driver" role to the user
+        $driverRole = Role::where('name', 'driver')->first();
+        $user->assignRole($driverRole);
 
         // Create a new profile associated with the user
         $profile = new Profile([
@@ -125,6 +153,10 @@ class DriverController extends Controller
                     'email' => $row['email'],
                     'password' => Hash::make($password), // Auto-generate password
                 ]);
+
+                // Assign the "driver" role to the user
+                $driverRole = Role::where('name', 'driver')->first();
+                $user->assignRole($driverRole);
 
                 // Create a new profile associated with the user
                 $profile = new Profile([

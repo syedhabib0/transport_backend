@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DriverController;
 use Illuminate\Http\Request;
+use Illuminate\Routing\RouteGroup;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -23,7 +24,12 @@ Route::middleware(['auth:sanctum'])->group(function(){
 
     // Dashboard stats route
     Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
-    Route::post('/driver/create', [DriverController::class, 'create']);
-    Route::post('/driver/create/bulk', [DriverController::class, 'uploadBulk']);
+
+    Route::group(['prefix'=>'drivers'], function() {
+        Route::get('/', [DriverController::class, 'index']);
+        Route::post('/create', [DriverController::class, 'create']);
+        Route::post('/create/bulk', [DriverController::class, 'uploadBulk']);
+        
+    });    
 });
 
