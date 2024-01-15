@@ -24,6 +24,6 @@ Route::middleware(['auth:sanctum'])->group(function(){
     // Dashboard stats route
     Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
     Route::post('/driver/create', [DriverController::class, 'create']);
+    Route::post('/driver/create/bulk', [DriverController::class, 'uploadBulk']);
 });
-Route::post('/driver/create/bulk', [DriverController::class, 'uploadBulk']);
 
