@@ -28,6 +28,8 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::group(['prefix'=>'drivers'], function() {
         Route::get('/', [DriverController::class, 'index']);
         Route::post('/create', [DriverController::class, 'create']);
+        Route::get('/{id}', [DriverController::class, 'show']);
+        Route::put('/{id}/edit', [DriverController::class, 'update']);
         Route::post('/create/bulk', [DriverController::class, 'uploadBulk']);
         
     });    

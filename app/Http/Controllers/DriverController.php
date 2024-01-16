@@ -40,23 +40,6 @@ class DriverController extends Controller
 
     public function create(Request $request)
     {
-        // dd($request);
-        // Validate the request
-        // $request->validate([
-        //     'first_name' => 'required|string|max:255',
-        //     'last_name' => 'required|string|max:255',
-        //     'email' => 'required|email|max:255',
-        //     // 'phone' => 'required|number',
-        // ]);
-
-        // Create or update database record
-        // $userData = User::create(
-        //     'first_name' => $request->input('first_name'),
-        //     'last_name' => $request->input('last_name'),
-        //     'email' => $request->input('email'),
-        //     // ['phone' => $request->input('phone')],
-        // );
-
         $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
@@ -100,30 +83,37 @@ class DriverController extends Controller
 
     }
 
-    // public function uploadBulk(Request $request)
-    // {
-    //     $request->validate([
-    //         'file' => 'required|mimes:xlsx,csv|max:100000', // 100 MB
-    //     ]);
+    public function show($id)
+    {
+        // $driver = User::findOrFail($id);
 
-    //     $file = $request->file('file');
+        // Retrieve the driver user with related data
+        $driver = User::with(['profile', 'driver'])
+            ->where('id', $id)
+            ->firstOrFail();
 
-    //     // Validate column names
-    //     $import = new DriversImport(); // Replace with your import class
-    //     $headings = $import->toArray($file)->toArray()[0][0];
+        return response()->json(['driver' => $driver]);
+    }
 
-    //     $requiredColumns = ['First Name', 'Last Name', 'Email', 'Phone Number'];
-    //     foreach ($requiredColumns as $column) {
-    //         if (!in_array($column, $headings)) {
-    //             throw new ValidationException("Column '$column' is required.");
-    //         }
-    //     }
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'first_name' => 'required|string',
+            'last_name' => 'required|string',
+            // Add other validation rules for the fields you want to update
+        ]);
 
-    //     // Process the file using Maatwebsite\Excel
-    //     Excel::import($import, $file);
+        $driver = Driver::findOrFail($id);
 
-    //     return response()->json(['message' => 'File uploaded and processed successfully.']);
-    // }
+        // Update the driver with the new data
+        $driver->update([
+            'first_name' => $request->input('first_name'),
+            'last_name' => $request->input('last_name'),
+            // Update other fields as needed
+        ]);
+
+        return response()->json(['message' => 'Driver updated successfully', 'driver' => $driver]);
+    }
 
     public function uploadBulk(Request $request)
     {
@@ -182,31 +172,31 @@ class DriverController extends Controller
         }
     }
 
-    private function validateAndTransformData(array $data)
-    {
-        // Your validation and transformation logic
-        $username = $data["First Name"] . '_' . $data["Last Name"]; 
-        $profilePictureName = $this->generateProfilePictureName($username, $data['Profile Picture']);
+    // private function validateAndTransformData(array $data)
+    // {
+    //     // Your validation and transformation logic
+    //     $username = $data["First Name"] . '_' . $data["Last Name"]; 
+    //     $profilePictureName = $this->generateProfilePictureName($username, $data['Profile Picture']);
 
-        $validatedData = [
-            'first_name' => $data['First Name'],
-            'last_name' => $data['Last Name'],
-            'profile_picture' => $profilePictureName,
-            'email' => $data['Email'],
-            'phone_number' => $data['Phone Number'],
-        ];
+    //     $validatedData = [
+    //         'first_name' => $data['First Name'],
+    //         'last_name' => $data['Last Name'],
+    //         'profile_picture' => $profilePictureName,
+    //         'email' => $data['Email'],
+    //         'phone_number' => $data['Phone Number'],
+    //     ];
 
-        // Additional validation or data transformation if needed
+    //     // Additional validation or data transformation if needed
 
-        return $validatedData;
-    }
+    //     return $validatedData;
+    // }
 
-    private function generateProfilePictureName($username, $originalName)
-    {
-        // Your logic to generate a unique profile picture name
-        $timestamp = now()->timestamp;
-        $extension = pathinfo($originalName, PATHINFO_EXTENSION);
+    // private function generateProfilePictureName($username, $originalName)
+    // {
+    //     // Your logic to generate a unique profile picture name
+    //     $timestamp = now()->timestamp;
+    //     $extension = pathinfo($originalName, PATHINFO_EXTENSION);
 
-        return "{$username}_{$timestamp}.{$extension}";
-    }
+    //     return "{$username}_{$timestamp}.{$extension}";
+    // }
 }
