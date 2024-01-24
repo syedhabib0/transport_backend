@@ -12,6 +12,8 @@ class Load extends Model
     protected $fillable = [
         'user_id',
         'driver_id',
+        'unit_no',
+        'bill_id',
         'load_type',
         'weight',
         'destination',
@@ -20,12 +22,17 @@ class Load extends Model
         'pickup_date',
         'delivery_date',
         'status',
-        'driver_earnings',
+        'total_fare',
+        'driver_fare',
     ];
 
     public function driver()
     {
         return $this->belongsTo(Driver::class);
+    }
+    public function vehicle()
+    {
+        return $this->belongsTo(Vehicle::class);
     }
 
     public function documents()

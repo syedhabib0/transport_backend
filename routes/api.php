@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DriverController;
+use App\Http\Controllers\ImageController;
+use App\Http\Controllers\LoadController;
 use Illuminate\Http\Request;
 use Illuminate\Routing\RouteGroup;
 use Illuminate\Support\Facades\Route;
@@ -28,10 +30,18 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::group(['prefix'=>'drivers'], function() {
         Route::get('/', [DriverController::class, 'index']);
         Route::post('/create', [DriverController::class, 'create']);
+        Route::post('/create/bulk', [DriverController::class, 'uploadBulk']);     
         Route::get('/{id}', [DriverController::class, 'show']);
-        Route::put('/{id}/edit', [DriverController::class, 'update']);
-        Route::post('/create/bulk', [DriverController::class, 'uploadBulk']);
-        
+        Route::put('/{id}/update', [DriverController::class, 'update']);
+        Route::post('/{id}/updateGeneralInformation', [DriverController::class, 'updateGeneralInformation']);
+        Route::put('/{id}/updateDocuments', [DriverController::class, 'updateDocuments']);
+        Route::put('/{id}/updateTrucks', [DriverController::class, 'updateTrucks']);
+        Route::put('/{id}/updateReminders', [DriverController::class, 'updateReminders']);
+    });    
+    Route::group(['prefix'=>'loads'], function() {
+        Route::get('/', [LoadController::class, 'index']);
+        Route::post('/', [LoadController::class, 'store']);
     });    
 });
 
+Route::get('/images/{path}', [ImageController::class, 'show'])->where('path', '.*');

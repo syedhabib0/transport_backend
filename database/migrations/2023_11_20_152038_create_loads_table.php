@@ -15,15 +15,18 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users');
             $table->foreignId('driver_id')->nullable()->constrained('drivers');
-            $table->string('load_type');
-            $table->string('weight');
-            $table->string('destination');
+            $table->foreignId('unit_no')->nullable()->constrained('vehicles');
+            $table->string('bill_id')->nullable();
+            $table->string('load_type')->nullable();
+            $table->string('weight')->nullable();
+            $table->string('destination')->nullable();
             $table->string('pickup_location');
             $table->string('dropoff_location');
-            $table->date('pickup_date');
-            $table->string('delivery_date');
+            $table->date('pickup_date')->nullable();
+            $table->string('delivery_date')->nullable();
             $table->string('status')->default('available');
-            $table->decimal('driver_earnings', 8, 2)->nullable(); // Add this line
+            $table->decimal('total_fare', 8, 2)->nullable(); // Add this line
+            $table->decimal('driver_fare', 8, 2)->nullable(); // Add this line
             $table->timestamps();
         });
     }

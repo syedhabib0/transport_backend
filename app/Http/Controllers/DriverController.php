@@ -10,6 +10,7 @@ use App\Models\Driver;
 use App\Models\Profile;
 use App\Models\User;
 use App\Notifications\DriverImportNotification;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
@@ -19,6 +20,7 @@ class DriverController extends Controller
     public function index(Request $request){
         // Retrieve the "driver" role
         $driverRole = Role::where('name', 'driver')->first();
+
 
         // Check if the role exists
         if ($driverRole) {
@@ -59,14 +61,25 @@ class DriverController extends Controller
         // Assign the "driver" role to the user
         $driverRole = Role::where('name', 'driver')->first();
         $user->assignRole($driverRole);
+        
+        $current_user_id = Auth::id();
 
         // Create a new profile associated with the user
         $profile = new Profile([
             'phone' => $request->phone_number,
+            // 'profile_photo' => $request->profile_picture,
+            // Add other profile fields as needed
+        ]);
+        $user->profile()->save($profile);
+
+        // Create a new profile associated with the user
+        $driver = new Driver([
+            'profile_id' => $profile->id,
+            'hired_by' => $current_user_id,
             // Add other profile fields as needed
         ]);
 
-        $user->profile()->save($profile);
+        $user->driver()->save($driver);
 
 
         if($user){
@@ -92,7 +105,12 @@ class DriverController extends Controller
             ->where('id', $id)
             ->firstOrFail();
 
-        return response()->json(['driver' => $driver]);
+        $hired_user = $driver->driver->hired_by;
+
+        $hired_by = User::where('id', $hired_user)->first();
+        
+
+        return response()->json(['driver' => $driver, 'hired_by' => $hired_by]);
     }
 
     public function update(Request $request, $id)
@@ -103,7 +121,8 @@ class DriverController extends Controller
             // Add other validation rules for the fields you want to update
         ]);
 
-        $driver = Driver::findOrFail($id);
+        $profile = Profile::where('user_id', $id);
+        $driver = Driver::where('user_id', $id);
 
         // Update the driver with the new data
         $driver->update([
@@ -136,6 +155,8 @@ class DriverController extends Controller
 
                 $password = Str::random(8);
 
+                $current_user_id = Auth::id();
+
                 // Create a new user
                 $user = User::create([
                     'first_name' => $row['first_name'],
@@ -156,6 +177,16 @@ class DriverController extends Controller
 
                 $user->profile()->save($profile);
 
+                // Create a new profile associated with the user
+                $driver = new Driver([
+                    'profile_id' => $profile->id,
+                    'hired_by' => $current_user_id,
+                    // Add other profile fields as needed
+                ]);
+
+                $user->driver()->save($driver);
+
+
                 if ($user) {
                     // Send password reset notification
                     $user->notify(new DriverImportNotification($user, $password));
@@ -171,6 +202,171 @@ class DriverController extends Controller
             return response()->json(['error' => 'Bulk upload failed', 'message' => $e->getMessage()], 500);
         }
     }
+
+    public function updateGeneralInformation(Request $request, $id)
+    {
+        // $request->validate([
+        //     'first_name' => 'required|string',
+        //     'last_name' => 'required|string',
+        //     'email' => 'required|string|email',
+        //     'profile_picture' => 'required|string',
+        //     'dob' => 'required|string',
+        //     'hired_by' => 'required|string',
+        //     'status' => 'required|string',
+        //     'phone' => 'required|string',
+        //     'note' => 'string',
+        // ]);
+
+        $user = User::where('id', $id)->with('profile', 'driver')->first();
+        
+        // Validate the request data
+        $request->validate([
+            // 'user_id' => 'required|exists:users,id',
+            'first_name' => 'required',
+            'last_name' => 'required',
+            'email' => 'required|email',
+            'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif',
+            'dob' => 'required|date',
+            'phone' => 'required',
+            'hired_by' => 'nullable',
+            'status' => 'required|in:active,inactive', // Adjust options as needed
+            'note' => 'nullable',
+        ]);
+        // error_log($request);
+
+        // Handle profile picture upload if provided
+        // if ($request->hasFile('profile_picture')) {
+        //     $path = $request->file('profile_picture')->store('profile_pictures');
+        //     $request->merge(['profile_picture' => $path]);
+        // }
+        if ($request->hasFile('profile_picture')) {
+            $user = User::where('id', $id)->first();
+            $profile = Profile::where('user_id', $id)->first();
+            $driver = Driver::where('user_id', $id)->first();
+            $profilePicture = $request->file('profile_picture');
+            // $user_id = auth()->user()->id; // Adjust this based on how you get the user ID
+    
+            // Generate a unique file name
+            // $fileName = "{$user_id}_photo_" . time() . '.' . $profilePicture->getClientOriginalExtension();
+    
+            // Save the file in the specified directory
+            // $profilePicture->storeAs("public/assets/images/profiles/{$user_id}_{$request['first_name']}_{$request['last_name']}", $fileName);
+            $old_image = $user->profile->profile_photo;
+            // Retrieve the uploaded file
+            $image = request()->file('profile_picture');
+    
+            // Generate a unique name for the image
+            $imageName = "{$id}_photo_" . time() . '.' . $image->getClientOriginalExtension();
+    
+            $folderPath = "assets/images/users/{$id}_{$request['first_name']}_{$request['last_name']}";
+            // Define the storage path
+            // $storagePath = public_path();
+    
+            // Store the image in the specified folder
+            $status = $image->move(public_path($folderPath), $imageName);
+            $fullPath = $folderPath.'/'.$imageName;
+    
+            // $user->update([
+            //     'photo' => $imageName
+            // ]);
+    
+            if($status){    
+                $user->update([
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                ]);
+        
+                $profile->update([
+                    'phone' => $request->phone,
+                    'dob' => $request->dob,
+                    'profile_photo' => $fullPath,
+                ]);
+                
+                if($request->note){
+                    $driver->update([
+                        'status' => $request->status,
+                        'note' => $request->note,
+                    ]);
+                }else{
+                    $driver->update([
+                        'status' => $request->status,
+                    ]);
+                }
+            }
+            
+            if( $old_image && !empty($old_image) && file_exists($folderPath.DIRECTORY_SEPARATOR.$old_image)){
+                unlink($folderPath.DIRECTORY_SEPARATOR.$old_image);
+            }
+    
+            return response()->json(['message' => 'Driver Data updated successfully', 'driver' => $user]);
+        }
+
+    
+
+    }
+    
+    public function updateDocuments(Request $request, $id)
+    {
+        $request->validate([
+            'first_name' => 'required|string',
+            'last_name' => 'required|string',
+            // Add other validation rules for the fields you want to update
+        ]);
+
+        $driver = Driver::findOrFail($id);
+
+        // Update the driver with the new data
+        $driver->update([
+            'first_name' => $request->input('first_name'),
+            'last_name' => $request->input('last_name'),
+            // Update other fields as needed
+        ]);
+
+        return response()->json(['message' => 'Driver updated successfully', 'driver' => $driver]);
+    }
+
+    public function updateTrucks(Request $request, $id)
+    {
+        $request->validate([
+            'first_name' => 'required|string',
+            'last_name' => 'required|string',
+            // Add other validation rules for the fields you want to update
+        ]);
+
+        $driver = Driver::findOrFail($id);
+
+        // Update the driver with the new data
+        $driver->update([
+            'first_name' => $request->input('first_name'),
+            'last_name' => $request->input('last_name'),
+            // Update other fields as needed
+        ]);
+
+        return response()->json(['message' => 'Driver updated successfully', 'driver' => $driver]);
+    }
+
+    public function updateReminders(Request $request, $id)
+    {
+        $request->validate([
+            'first_name' => 'required|string',
+            'last_name' => 'required|string',
+            // Add other validation rules for the fields you want to update
+        ]);
+
+        $driver = Driver::findOrFail($id);
+
+        // Update the driver with the new data
+        $driver->update([
+            'first_name' => $request->input('first_name'),
+            'last_name' => $request->input('last_name'),
+            // Update other fields as needed
+        ]);
+
+        return response()->json(['message' => 'Driver updated successfully', 'driver' => $driver]);
+    }
+
+
+
 
     // private function validateAndTransformData(array $data)
     // {
