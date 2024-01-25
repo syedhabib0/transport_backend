@@ -29,20 +29,6 @@ class LoadController extends Controller
      */
     public function store(Request $request)
     {
-        // 'user_id',
-        // 'driver_id',
-        // 'unit_no',
-        // 'bill_id',
-        // 'load_type',
-        // 'weight',
-        // 'destination',
-        // 'pickup_location',
-        // 'dropoff_location',
-        // 'pickup_date',
-        // 'delivery_date',
-        // 'status',
-        // 'total_fare',
-        // 'driver_fare',
         // Validation rules, adjust as per your requirements
         $validatedData = $request->validate([
             'driver' => 'required|string',
@@ -104,4 +90,47 @@ class LoadController extends Controller
     {
         //
     }
+
+    public function filterLoads(Request $request)
+    {
+        // Retrieve the filter parameters from the request
+        $filters = $request->all();
+
+        // Apply filters to the query
+        $loads = Load::with('driver.profile', 'driver.user')
+        ->when($filters['loadId_filter'], function ($query) use ($filters) {
+            $query->where('id', $filters['loadId_filter']);
+        })
+        ->when($filters['billId_filter'], function ($query) use ($filters) {
+            $query->where('bill_id', $filters['billId_filter']);
+        })
+        ->when($filters['driver_filter'], function ($query) use ($filters) {
+            $query->where('driver_id', $filters['driver_filter']);
+        })
+        ->when($filters['pickupDate_filter'], function ($query) use ($filters) {
+            $query->where('pickup_date', $filters['pickupDate_filter']);
+        })
+        ->when($filters['dropOff_filter'], function ($query) use ($filters) {
+            $query->where('dropoff_location', $filters['dropOff_filter']);
+        })
+        ->when($filters['createdDate_filter'], function ($query) use ($filters) {
+            $query->where('created_at', $filters['createdDate_filter']);
+        })
+        ->when($filters['totalFare_filter'], function ($query) use ($filters) {
+            $query->where('total_fare', $filters['totalFare_filter']);
+        })
+        ->when($filters['driverFare_filter'], function ($query) use ($filters) {
+            $query->where('driver_fare', $filters['driverFare_filter']);
+        })
+        ->when($filters['loadStatus_filter'], function ($query) use ($filters) {
+            $query->where('status', $filters['loadStatus_filter']);
+        });
+        // Add more filters as needed
+
+        // Execute the query
+        $filteredLoads = $loads->get();
+
+        return response()->json(['loads' => $filteredLoads]);
+    }
+
 }

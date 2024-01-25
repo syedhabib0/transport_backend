@@ -37,11 +37,13 @@ Route::middleware(['auth:sanctum'])->group(function(){
         Route::put('/{id}/updateDocuments', [DriverController::class, 'updateDocuments']);
         Route::put('/{id}/updateTrucks', [DriverController::class, 'updateTrucks']);
         Route::put('/{id}/updateReminders', [DriverController::class, 'updateReminders']);
-    });    
+    });
     Route::group(['prefix'=>'loads'], function() {
         Route::get('/', [LoadController::class, 'index']);
         Route::post('/', [LoadController::class, 'store']);
+        Route::post('/filter-loads', [LoadController::class, 'filterLoads']);
     });    
+
 });
 
 Route::get('/images/{path}', [ImageController::class, 'show'])->where('path', '.*');
