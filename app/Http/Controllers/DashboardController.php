@@ -20,10 +20,10 @@ class DashboardController extends Controller
         $drivers = $driverRole->users()->with('profile', 'driver')->get();
 
         // Calculate total earnings
-        $totalEarnings = Load::sum('driver_earnings');
+        $totalEarnings = Load::sum('total_fare');
 
         // Calculate driver earnings separately
-        $driverEarnings = Load::whereNotNull('driver_id')->sum('driver_earnings');
+        $driverEarnings = Load::whereNotNull('driver_id')->sum('driver_fare');
 
         return response()->json([
             'totalLoads' => $totalLoads,

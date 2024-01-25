@@ -14,8 +14,8 @@ class LoadController extends Controller
      */
     public function index()
     {
-        $drivers = Driver::all();
         $loads = Load::all();
+        $drivers = Driver::all();
         return response()->json(['loads' => $loads, 'drivers' => $drivers]);
     }
 
