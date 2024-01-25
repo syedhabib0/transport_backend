@@ -14,10 +14,15 @@ class LoadController extends Controller
      */
     public function index()
     {
-        $loads = Load::all();
-        $drivers = Driver::all();
-        return response()->json(['loads' => $loads, 'drivers' => $drivers]);
-    }
+        try {
+            // Eager load the relationships using "with"
+            $loads = Load::with('driver.profile', 'driver.user')->get();
+
+            return response()->json(['loads' => $loads]);
+        } catch (\Exception $e) {
+            // Handle the exception, log it, or return an error response
+            return response()->json(['error' => $e->getMessage()], 500);
+        }   }
 
     /**
      * Store a newly created resource in storage.
