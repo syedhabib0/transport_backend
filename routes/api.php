@@ -39,7 +39,7 @@ Route::middleware(['auth:sanctum'])->group(function(){
         Route::post('/{id}/updateTrucks', [DriverController::class, 'updateTrucks']);
         Route::post('/{id}/updateReminders', [DriverController::class, 'updateReminders']);
         Route::post('/updateDriverStatus/{driver}', [DriverController::class, 'updateStatus']);
-        // Route::post('/searchDrivers', [DriverController::class, 'searchDrivers']);
+        Route::post('/searchDrivers', [DriverController::class, 'searchDrivers']);
     });
 
     // Loads Routes

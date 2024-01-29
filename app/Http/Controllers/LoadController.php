@@ -25,7 +25,6 @@ class LoadController extends Controller
                 'current_page' => $loads->currentPage(),
                 'last_page' => $loads->lastPage(),
             ]);
-            return response()->json(['loads' => $loads]);
         } catch (\Exception $e) {
             // Handle the exception, log it, or return an error response
             return response()->json(['error' => $e->getMessage()], 500);

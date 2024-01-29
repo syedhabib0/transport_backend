@@ -364,46 +364,38 @@ class DriverController extends Controller
         return response()->json(['message' => 'Driver status updated successfully']);
     }
 
-    // public function searchDrivers(Request $request)
-    // {
-    //     try{
-    //     // Get search parameters from the request
-    //     $namePhoneEmail = $request->input('namePhoneEmail');
-    //     $status = $request->input('status');
-    //     $unitNumber = $request->input('unitNumber');
+    public function searchDrivers(Request $request)
+    {
+        // Retrieve the filter parameters from the request
+        $filters = $request->all();
 
-    //     // Query to search drivers based on filters
-    //     $query = User::query();
+        // Apply filters to the query
+        $drivers = User::with(['driver', 'profile'])
+        ->whereHas('roles', function ($q) {
+            $q->where('name', 'driver');
+        })
+        ->when($filters['namePhoneEmail'], function ($query) use ($filters) {
+            $query->where(function ($subquery) use ($filters) {
+                $subquery->where('first_name', 'like', "%{$filters['namePhoneEmail']}%")
+                    ->orWhere('last_name', 'like', "%{$filters['namePhoneEmail']}%")
+                    ->orWhere('email', 'like', "%{$filters['namePhoneEmail']}%")
+                    ->orWhereHas('profile', function ($q) use ($filters) {
+                        $q->where('phone', 'like', "%{$filters['namePhoneEmail']}%");
+                    });
+            });
+        })
+        ->when($filters['status'], function ($query) use ($filters) {
+            $query->whereHas('driver', function ($q) use ($filters) {
+                $q->where('status', $filters['status']);
+            });
+        })
+        ->when($filters['unitNumber'], function ($query) use ($filters) {
+                $query->where('id', $filters['unitNumber']);
+        });
 
-    //     if ($namePhoneEmail) {
-    //         $query->where(function ($q) use ($namePhoneEmail) {
-    //             $q->where('first_name', 'like', "%$namePhoneEmail%")
-    //             ->orWhere('last_name', 'like', "%$namePhoneEmail%")
-    //             ->orWhere('email', 'like', "%$namePhoneEmail%")
-    //             ->orWhereHas('profile', function ($q) use ($namePhoneEmail) {
-    //                 $q->where('phone', 'like', "%$namePhoneEmail%");
-    //             });
-    //         });
-    //     }
-    //     // Use Eloquent relationships to join with the Driver and Profile models
-    //     $query->whereHas('driver', function ($q) use ($status, $unitNumber) {
-    //         // Search in the Driver model for status and unit number
-    //         if ($status) {
-    //             $q->where('status', $status);
-    //         }
+        // Execute the query
+        $filteredDrivers = $drivers->get();
 
-    //         if ($unitNumber) {
-    //             $q->where('unit_number', 'like', "%$unitNumber%");
-    //         }
-    //     });
-
-    //     // Get the results
-    //     $drivers = $query->firstOrFail();
-
-    //     return response()->json(['drivers' => $drivers]);
-    // } catch (ModelNotFoundException $e) {
-    //     // Handle the case where no results are found
-    //     return response()->json(['message' => 'No drivers found'], 404);
-    // }
-    // }
+        return response()->json(['drivers' => $filteredDrivers]);
+    }
 }
