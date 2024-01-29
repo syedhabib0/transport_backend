@@ -10,6 +10,7 @@ use App\Models\Driver;
 use App\Models\Profile;
 use App\Models\User;
 use App\Notifications\DriverImportNotification;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -205,17 +206,6 @@ class DriverController extends Controller
 
     public function updateGeneralInformation(Request $request, $id)
     {
-        // $request->validate([
-        //     'first_name' => 'required|string',
-        //     'last_name' => 'required|string',
-        //     'email' => 'required|string|email',
-        //     'profile_picture' => 'required|string',
-        //     'dob' => 'required|string',
-        //     'hired_by' => 'required|string',
-        //     'status' => 'required|string',
-        //     'phone' => 'required|string',
-        //     'note' => 'string',
-        // ]);
 
         $user = User::where('id', $id)->with('profile', 'driver')->first();
         
@@ -229,16 +219,10 @@ class DriverController extends Controller
             'dob' => 'required|date',
             'phone' => 'required',
             'hired_by' => 'nullable',
-            'status' => 'required|in:active,inactive', // Adjust options as needed
+            'status' => 'required|in:available,not_available,will_be_available,under_our_load,under_our_bid,suspended',
             'note' => 'nullable',
         ]);
-        // error_log($request);
 
-        // Handle profile picture upload if provided
-        // if ($request->hasFile('profile_picture')) {
-        //     $path = $request->file('profile_picture')->store('profile_pictures');
-        //     $request->merge(['profile_picture' => $path]);
-        // }
         if ($request->hasFile('profile_picture')) {
             $user = User::where('id', $id)->first();
             $profile = Profile::where('user_id', $id)->first();
@@ -365,34 +349,61 @@ class DriverController extends Controller
         return response()->json(['message' => 'Driver updated successfully', 'driver' => $driver]);
     }
 
+    public function updateStatus(Request $request, Driver $driver)
+    {
+        // \Log::info('Controller method executed successfully.');
 
+        // print_r($request);
+        $request->validate([
+            'status' => 'required|in:available,not available,will be available,under our load,under our bid,suspended',
+        ]);
 
+        $driver->status = $request->input('status');
+        $driver->save();
 
-    // private function validateAndTransformData(array $data)
+        return response()->json(['message' => 'Driver status updated successfully']);
+    }
+
+    // public function searchDrivers(Request $request)
     // {
-    //     // Your validation and transformation logic
-    //     $username = $data["First Name"] . '_' . $data["Last Name"]; 
-    //     $profilePictureName = $this->generateProfilePictureName($username, $data['Profile Picture']);
+    //     try{
+    //     // Get search parameters from the request
+    //     $namePhoneEmail = $request->input('namePhoneEmail');
+    //     $status = $request->input('status');
+    //     $unitNumber = $request->input('unitNumber');
 
-    //     $validatedData = [
-    //         'first_name' => $data['First Name'],
-    //         'last_name' => $data['Last Name'],
-    //         'profile_picture' => $profilePictureName,
-    //         'email' => $data['Email'],
-    //         'phone_number' => $data['Phone Number'],
-    //     ];
+    //     // Query to search drivers based on filters
+    //     $query = User::query();
 
-    //     // Additional validation or data transformation if needed
+    //     if ($namePhoneEmail) {
+    //         $query->where(function ($q) use ($namePhoneEmail) {
+    //             $q->where('first_name', 'like', "%$namePhoneEmail%")
+    //             ->orWhere('last_name', 'like', "%$namePhoneEmail%")
+    //             ->orWhere('email', 'like', "%$namePhoneEmail%")
+    //             ->orWhereHas('profile', function ($q) use ($namePhoneEmail) {
+    //                 $q->where('phone', 'like', "%$namePhoneEmail%");
+    //             });
+    //         });
+    //     }
+    //     // Use Eloquent relationships to join with the Driver and Profile models
+    //     $query->whereHas('driver', function ($q) use ($status, $unitNumber) {
+    //         // Search in the Driver model for status and unit number
+    //         if ($status) {
+    //             $q->where('status', $status);
+    //         }
 
-    //     return $validatedData;
+    //         if ($unitNumber) {
+    //             $q->where('unit_number', 'like', "%$unitNumber%");
+    //         }
+    //     });
+
+    //     // Get the results
+    //     $drivers = $query->firstOrFail();
+
+    //     return response()->json(['drivers' => $drivers]);
+    // } catch (ModelNotFoundException $e) {
+    //     // Handle the case where no results are found
+    //     return response()->json(['message' => 'No drivers found'], 404);
     // }
-
-    // private function generateProfilePictureName($username, $originalName)
-    // {
-    //     // Your logic to generate a unique profile picture name
-    //     $timestamp = now()->timestamp;
-    //     $extension = pathinfo($originalName, PATHINFO_EXTENSION);
-
-    //     return "{$username}_{$timestamp}.{$extension}";
     // }
 }

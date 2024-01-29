@@ -24,20 +24,25 @@ Route::middleware(['auth:sanctum'])->group(function(){
         return $request->user();
     });
 
-    // Dashboard stats route
+    // Dashboard Routes
     Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
 
+    // Drivers Routes
     Route::group(['prefix'=>'drivers'], function() {
         Route::get('/', [DriverController::class, 'index']);
         Route::post('/create', [DriverController::class, 'create']);
         Route::post('/create/bulk', [DriverController::class, 'uploadBulk']);     
         Route::get('/{id}', [DriverController::class, 'show']);
-        Route::put('/{id}/update', [DriverController::class, 'update']);
+        Route::post('/{id}/update', [DriverController::class, 'update']);
         Route::post('/{id}/updateGeneralInformation', [DriverController::class, 'updateGeneralInformation']);
-        Route::put('/{id}/updateDocuments', [DriverController::class, 'updateDocuments']);
-        Route::put('/{id}/updateTrucks', [DriverController::class, 'updateTrucks']);
-        Route::put('/{id}/updateReminders', [DriverController::class, 'updateReminders']);
+        Route::post('/{id}/updateDocuments', [DriverController::class, 'updateDocuments']);
+        Route::post('/{id}/updateTrucks', [DriverController::class, 'updateTrucks']);
+        Route::post('/{id}/updateReminders', [DriverController::class, 'updateReminders']);
+        Route::post('/updateDriverStatus/{driver}', [DriverController::class, 'updateStatus']);
+        // Route::post('/searchDrivers', [DriverController::class, 'searchDrivers']);
     });
+
+    // Loads Routes
     Route::group(['prefix'=>'loads'], function() {
         Route::get('/', [LoadController::class, 'index']);
         Route::post('/', [LoadController::class, 'store']);

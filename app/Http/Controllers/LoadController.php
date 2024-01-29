@@ -12,12 +12,19 @@ class LoadController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
+            $perPage = $request->get('per_page', 10); // You can adjust the default number of items per page
             // Eager load the relationships using "with"
-            $loads = Load::with('driver.profile', 'driver.user')->get();
+            // $loads = Load::with('driver.profile', 'driver.user')->paginate($perPage);
+            $loads = Load::with('driver.profile', 'driver.user')->paginate($perPage);
 
+            return response()->json([
+                'loads' => $loads->items(),
+                'current_page' => $loads->currentPage(),
+                'last_page' => $loads->lastPage(),
+            ]);
             return response()->json(['loads' => $loads]);
         } catch (\Exception $e) {
             // Handle the exception, log it, or return an error response
