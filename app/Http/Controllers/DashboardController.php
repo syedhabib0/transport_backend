@@ -14,7 +14,7 @@ class DashboardController extends Controller
         $totalLoads = Load::count();
         $completeLoads = Load::where('status', 'complete')->count();
         $totalDrivers = Driver::count(); // Assuming you have a Driver model
-        $activeDrivers = Driver::where('status', 'active')->count();
+        $activeDrivers = Driver::where('status', 'available')->count();
 
         $driverRole = Role::where('name', 'driver')->first();
         $drivers = $driverRole->users()->with('profile', 'driver')->get();

@@ -15,11 +15,22 @@ class LoadController extends Controller
     public function index(Request $request)
     {
         try {
-            $perPage = $request->get('per_page', 10); // You can adjust the default number of items per page
+            $perPage = $request->get('per_page', 10);
+    
+            // Check if the 'completed' query parameter is present
+            $isCompleted = $request->has('completed');
+    
             // Eager load the relationships using "with"
-            // $loads = Load::with('driver.profile', 'driver.user')->paginate($perPage);
-            $loads = Load::with('driver.profile', 'driver.user')->paginate($perPage);
-
+            $loadsQuery = Load::with('driver.profile', 'driver.user');
+    
+            // If 'completed' is true, filter only completed loads
+            if ($isCompleted) {
+                $loadsQuery->where('status', 'completed');
+            }
+    
+            // Paginate the results
+            $loads = $loadsQuery->paginate($perPage);
+    
             return response()->json([
                 'loads' => $loads->items(),
                 'current_page' => $loads->currentPage(),
@@ -28,7 +39,8 @@ class LoadController extends Controller
         } catch (\Exception $e) {
             // Handle the exception, log it, or return an error response
             return response()->json(['error' => $e->getMessage()], 500);
-        }   }
+        }   
+    }
 
     /**
      * Store a newly created resource in storage.
