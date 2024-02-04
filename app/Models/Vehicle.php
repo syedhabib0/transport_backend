@@ -28,7 +28,7 @@ class Vehicle extends Model
         return $this->hasOne(VehicleLicenseDetail::class);
     }
 
-    public function images()
+    public function vehicleImages()
     {
         return $this->hasOne(VehicleImage::class);
     }

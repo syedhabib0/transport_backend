@@ -4,13 +4,12 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Imports\DriversImport; // Replace with your import class
-use App\Exceptions\ValidationException;
+use App\Imports\DriversImport;
 use App\Models\Driver;
 use App\Models\Profile;
 use App\Models\User;
+use App\Models\Vehicle;
 use App\Notifications\DriverImportNotification;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -28,7 +27,6 @@ class DriverController extends Controller
             $perPage = $request->get('per_page', 10); // You can adjust the default number of items per page
             // Retrieve all users with the "driver" role
             $drivers = $driverRole->users()->with('profile', 'driver')->paginate($perPage);
-            // print_r($drivers);
 
             // You can now use $drivers as a collection of users with the "driver" role
             return response()->json([
@@ -47,7 +45,6 @@ class DriverController extends Controller
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            // 'phone_number' => ['required', 'number', 'max:255'],
         ]);
 
         $password = Str::random(8);
@@ -68,8 +65,6 @@ class DriverController extends Controller
         // Create a new profile associated with the user
         $profile = new Profile([
             'phone' => $request->phone_number,
-            // 'profile_photo' => $request->profile_picture,
-            // Add other profile fields as needed
         ]);
         $user->profile()->save($profile);
 
@@ -77,7 +72,6 @@ class DriverController extends Controller
         $driver = new Driver([
             'profile_id' => $profile->id,
             'hired_by' => $current_user_id,
-            // Add other profile fields as needed
         ]);
 
         $user->driver()->save($driver);
@@ -99,8 +93,6 @@ class DriverController extends Controller
 
     public function show($id)
     {
-        // $driver = User::findOrFail($id);
-
         // Retrieve the driver user with related data
         $user = User::where('id', $id)->first();
 
@@ -139,7 +131,6 @@ class DriverController extends Controller
 
     public function uploadBulk(Request $request)
     {
-        // dd($request->all());
         $request->validate([
             'file' => 'required|mimes:xlsx,csv|max:102400', // Validate the file input
         ]);
@@ -149,12 +140,10 @@ class DriverController extends Controller
             $import = new DriversImport();
             $importedData = Excel::toArray($import, $request->file('file'));
 
-            // print_r($importedData[0]);
 
             // Process each row of data
             foreach ($importedData[0] as $row) {
                 // Your validation and transformation logic
-                // $validatedData = $this->validateAndTransformData($row);
 
                 $password = Str::random(8);
 
@@ -194,9 +183,6 @@ class DriverController extends Controller
                     // Send password reset notification
                     $user->notify(new DriverImportNotification($user, $password));
                 
-                //     return response()->json(['message' => 'Driver created successfully', 'user' => $user]);
-                // } else {
-                //     return response()->json(['error' => 'Some error occurred on the server. Driver not created.', 'data' => $row], 500);
                 }
             }
 
@@ -230,13 +216,7 @@ class DriverController extends Controller
             $profile = Profile::where('user_id', $id)->first();
             $driver = Driver::where('user_id', $id)->first();
             $profilePicture = $request->file('profile_picture');
-            // $user_id = auth()->user()->id; // Adjust this based on how you get the user ID
-    
-            // Generate a unique file name
-            // $fileName = "{$user_id}_photo_" . time() . '.' . $profilePicture->getClientOriginalExtension();
-    
-            // Save the file in the specified directory
-            // $profilePicture->storeAs("public/assets/images/profiles/{$user_id}_{$request['first_name']}_{$request['last_name']}", $fileName);
+            
             $old_image = $user->profile->profile_photo;
             // Retrieve the uploaded file
             $image = request()->file('profile_picture');
@@ -248,16 +228,10 @@ class DriverController extends Controller
             if (!file_exists($folderPath)) {
                 mkdir($folderPath, 0777, true);
             }
-            // Define the storage path
-            // $storagePath = public_path();
-    
+            
             // Store the image in the specified folder
             $status = $image->move(public_path($folderPath), $imageName);
             $fullPath = $folderPath.'/'.$imageName;
-    
-            // $user->update([
-            //     'photo' => $imageName
-            // ]);
     
             if($status){    
                 $user->update([
@@ -326,36 +300,11 @@ class DriverController extends Controller
             mkdir($userDirectory, 0777, true);
         }
 
-        $this->handleImageUpload($driver, $request, 'license_photo_front', $userDirectory, 'licenseDetails');
-        $this->handleImageUpload($driver, $request, 'license_photo_back', $userDirectory, 'licenseDetails');
-        $this->handleImageUpload($driver, $request, 'insurance_photo_front', $userDirectory, 'insuranceDetails');
-        $this->handleImageUpload($driver, $request, 'insurance_photo_back', $userDirectory, 'insuranceDetails');
+        $this->handleDriverImageUpload($driver, $request, 'license_photo_front', $userDirectory, 'licenseDetails');
+        $this->handleDriverImageUpload($driver, $request, 'license_photo_back', $userDirectory, 'licenseDetails');
+        $this->handleDriverImageUpload($driver, $request, 'insurance_photo_front', $userDirectory, 'insuranceDetails');
+        $this->handleDriverImageUpload($driver, $request, 'insurance_photo_back', $userDirectory, 'insuranceDetails');
 
-        // Delete old images
-        // $this->deleteOldImages($userDirectory, $oldImages);
-
-        // // Handle license photo front
-        // $licensePhotoFront = $request->file('license_photo_front');
-        // $licensePhotoFrontName = "{$userId}_license_photo_front_" . time() . '.' . $licensePhotoFront->getClientOriginalExtension();
-        // $licensePhotoFront->move($userDirectory, $licensePhotoFrontName);
-
-        // // Handle license photo back
-        // $licensePhotoBack = $request->file('license_photo_back');
-        // $licensePhotoBackName = "{$userId}_license_photo_back_" . time() . '.' . $licensePhotoBack->getClientOriginalExtension();
-        // $licensePhotoBack->move($userDirectory, $licensePhotoBackName);
-
-        // // Handle insurance photo front
-        // $insurancePhotoFront = $request->file('insurance_photo_front');
-        // $insurancePhotoFrontName = "{$userId}_insurance_photo_front_" . time() . '.' . $insurancePhotoFront->getClientOriginalExtension();
-        // $insurancePhotoFront->move($userDirectory, $insurancePhotoFrontName);
-
-        // // Handle insurance photo back
-        // $insurancePhotoBack = $request->file('insurance_photo_back');
-        // $insurancePhotoBackName = "{$userId}_insurance_photo_back_" . time() . '.' . $insurancePhotoBack->getClientOriginalExtension();
-        // $insurancePhotoBack->move($userDirectory, $insurancePhotoBackName);
-
-        // Update the database with the new image names
-        // $this->updateImagesInDatabase($userId, $licensePhotoFrontName, $licensePhotoBackName, $insurancePhotoFrontName, $insurancePhotoBackName);
         $insurance = $driver->insuranceDetails()->updateOrCreate(
             [
                 'driver_id' => $driver->id,
@@ -377,90 +326,16 @@ class DriverController extends Controller
                 'license_issuance_state' => $request['license_issuance_state'],
             ]
         );
-        // if($insurancePhotoBack && $insurancePhotoFront && $licensePhotoFront && $licensePhotoBack){
-        // }
 
         if($license && $insurance){
             return response()->json(['message' => 'Driver updated successfully', 'driver' => $driver]);
 
         }
 
-
-        // if ($request->hasFile('profile_picture')) {
-        //     $user = User::where('id', $id)->first();
-        //     $profile = Profile::where('user_id', $id)->first();
-        //     $driver = Driver::where('user_id', $id)->first();
-        //     $profilePicture = $request->file('profile_picture');
-            
-        //     $old_image = $user->profile->profile_photo;
-        //     // Retrieve the uploaded file
-        //     $image = request()->file('profile_picture');
-    
-        //     // Generate a unique name for the image
-        //     $imageName = "{$id}_photo_" . time() . '.' . $image->getClientOriginalExtension();
-    
-        //     $folderPath = "assets/images/users/{$id}_{$request['first_name']}_{$request['last_name']}";
-        //     // Define the storage path
-        //     // $storagePath = public_path();
-    
-        //     // Store the image in the specified folder
-        //     $status = $image->move(public_path($folderPath), $imageName);
-        //     $fullPath = $folderPath.'/'.$imageName;
-
-        // }
-
-
-        // $driver = Driver::findOrFail($id);
-
-        // // Update the driver with the new data
-        // $driver->update([
-        //     'first_name' => $request->input('first_name'),
-        //     'last_name' => $request->input('last_name'),
-        //     // Update other fields as needed
-        // ]);
-
-        // if( $old_image && !empty($old_image) && file_exists($folderPath.DIRECTORY_SEPARATOR.$old_image)){
-        //     unlink($folderPath.DIRECTORY_SEPARATOR.$old_image);
-        // }
-
-
-        // $folderPath = "assets/images/users/{$id}_{$request['first_name']}_{$request['last_name']}";
-        // if (!file_exists($folderPath)) {
-        //     mkdir($folderPath, 0777, true);
-        // }
-
-
-        // if ($request->hasFile('license_photo_front')) {
-        //     // $profilePicture = $request->file('license_photo_front');
-
-        //     $old_image = $driver->insuranceDetails->insurance_photo_front;
-        //     $image = request()->file('license_photo_front');
-
-        //     // Generate a unique name for the image
-        //     $imageName = "{$id}_license_photo_front_" . time() . '.' . $image->getClientOriginalExtension();
-    
-
-        //     // Store the image in the specified folder
-        //     $status = $image->move(public_path($folderPath), $imageName);
-        //     $license_photo_front_path = $folderPath.'/'.$imageName;
-
-
-        //     if($status){    
-        //         $user->update([
-        //         'first_name' => $request->first_name,
-        //         'last_name' => $request->last_name,
-        //         ]);
-        //     }
-        //     if( $old_image && !empty($old_image) && file_exists($folderPath.DIRECTORY_SEPARATOR.$old_image)){
-        //         unlink($folderPath.DIRECTORY_SEPARATOR.$old_image);
-        //     }
-
-        // }
-
         return response()->json(['message' => 'Driver updated successfully', 'driver' => $driver]);
     }
 
-    private function handleImageUpload($driver, $request, $fieldName, $folderPath, $relationName)
+    private function handleDriverImageUpload($driver, $request, $fieldName, $folderPath, $relationName)
     {
         if ($request->hasFile($fieldName)) {
             $relation = $driver->{$relationName}; // Get the insuranceDetails or licenseDetails relation
@@ -477,8 +352,7 @@ class DriverController extends Controller
             $imagePath = $folderPath . '/' . $imageName;
     
             if ($status) {
-                // Update the relation's details
-                $relation->update([
+                $relation->updateOrCreate([
                     $fieldName => $imagePath,
                 ]);
     
@@ -490,65 +364,159 @@ class DriverController extends Controller
         }
     }
 
-    // private function getOldImages($userId)
-    // {
-    //     // Assuming User has a one-to-one relationship with Profile
-    //     $user = Driver::with('insuranceDetails', 'licenseDetails')->where('user_id', $userId);
+    private function handleVehicleImageUpload($vehicle, $request, $fieldNames, $folderPath, $relationName)
+    {
+        $relation = $vehicle->{$relationName};
+    
+        // Check if the relation is null, and if so, create it
+        if (!$relation) {
+            $relation = $vehicle->{$relationName}()->create([]);
+        }
 
-    //     if ($user && $user->insuranceDetails && $user->licenseDetails) {
-    //         $oldImages = [
-    //             'license_photo_front' => $user->licenseDetails->license_photo_front,
-    //             'license_photo_back' => $user->licenseDetails->license_photo_back,
-    //             'insurance_photo_front' => $user->insuranceDetails->insurance_photo_front,
-    //             'insurance_photo_back' => $user->insuranceDetails->insurance_photo_back,
-    //         ];
+        // Convert single field name to an array for consistency
+        $fieldNames = is_array($fieldNames) ? $fieldNames : [$fieldNames];
 
-    //         // Filter out null or empty values
-    //         $oldImages = array_filter($oldImages);
-            
-    //         return $oldImages;
-    //     }
-
-    //     return [];
-    // }
-
-    // private function deleteOldImages($userDirectory, $oldImages)
-    // {
-    //     // Loop through old image names and delete each file
-    //     foreach ($oldImages as $oldImage) {
-    //         $filePath = $userDirectory . '/' . $oldImage;
-    //         if (file_exists($filePath)) {
-    //             unlink($filePath);
-    //         }
-    //     }
-    // }
+    
+        foreach ($fieldNames as $fieldName) {
+            if ($request->hasFile($fieldName)) {
+                $oldImage = $relation->{$fieldName};
+                $image = $request->file($fieldName);
+    
+                // Generate a unique name for the image
+                $imageName = "{$vehicle->id}_vehicles_{$fieldName}_" . time() . '.' . $image->getClientOriginalExtension();
+    
+                // Store the image in the specified folder
+                $status = $image->move(public_path($folderPath), $imageName);
+                $imagePath = $folderPath . '/' . $imageName;
+    
+                if ($status) {
+                    // Update the relation's details
+                    $relation->updateOrCreate(
+                        ['vehicle_id' => $vehicle->id], // Make sure to provide the correct foreign key
+                        [$fieldName => $imagePath]
+                    );
+    
+                    // Delete the old image if it exists
+                    if ($oldImage && !empty($oldImage) && file_exists($folderPath . DIRECTORY_SEPARATOR . $oldImage)) {
+                        unlink($folderPath . DIRECTORY_SEPARATOR . $oldImage);
+                    }
+                }
+            }
+        }
+    }
 
     public function updateTrucks(Request $request, $id)
     {
         $request->validate([
-            'first_name' => 'required|string',
-            'last_name' => 'required|string',
-            // Add other validation rules for the fields you want to update
+            'vehicle_type' => 'required|string',
+            'unit_number' => 'required|string',
+            'make' => 'required|string',
+            'model' => 'required|string',
+            'payload_weight' => 'required|string',
+            'length' => 'required|string',
+            'width' => 'required|string',
+            'height' => 'required|string',
+            'dimension_in' => 'required|string',
+            'is_available' => 'required|string',
+            'lift_gate' => 'nullable|string',
+            'hazmat' => 'nullable|string',
+            'icc_bar' => 'nullable|string',
+            'tsa' => 'nullable|string',
+            'twic' => 'nullable|string',
+            'pallet_jack' => 'nullable|string',
+            'true_dock_high' => 'nullable|string',
+            'tanker_endorsement' => 'nullable|string',
+            'license_plate_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'state' => 'required|string',
+            'license_expiry' => 'required|string',
+            'is_expirable' => 'nullable|string',
+            'front_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'back_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'left_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'right_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'cargo_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', 
         ]);
 
-        $driver = Driver::findOrFail($id);
+        $user = User::where('id', $id)->with('profile', 'driver')->first();
+        $userId = $user->id;
 
-        // Update the driver with the new data
-        $driver->update([
-            'first_name' => $request->input('first_name'),
-            'last_name' => $request->input('last_name'),
-            // Update other fields as needed
-        ]);
+        $driver = Driver::where('user_id', $userId)->with('vehicles')->first();
 
-        return response()->json(['message' => 'Driver updated successfully', 'driver' => $driver]);
+
+        // Create a new vehicle
+        $vehicle = $this->createVehicle($driver, $request, $user);
+
+        return response()->json(['message' => 'Truck Data updated successfully', 'driver' => $driver, 'vehicles' => $vehicle]);
     }
+
+    private function createVehicle($driver, $request, $user)
+    {
+        $createVehicle = $driver->vehicles()->create([
+            'driver_id' => $driver->id,
+            'vehicle_type' => $request->input('vehicle_type'),
+            'unit_number' => $request->input('unit_number'),
+            'make' => $request->input('make'),
+            'model' => $request->input('model'),
+            'payload_weight' => $request->input('payload_weight'),
+        ]);
+
+        if ($createVehicle) {
+            $latestVehicle = $this->updateVehicleDetails($createVehicle, $request, $user);
+            return $latestVehicle;
+        }else{
+            return "Can't create Vehicle. Try Again!";
+        }
+
+    }
+    private function updateVehicleDetails($vehicle, $request, $user)
+    {
+        // Your logic for updating license details and other details
+        $userDirectory = "assets/images/users/{$user->id}_{$user->first_name}_{$user->last_name}";
+        if (!file_exists($userDirectory)) {
+            mkdir($userDirectory, 0777, true);
+        }
+
+        $fieldNames = ['front_image', 'back_image', 'left_image', 'right_image', 'cargo_image'];
+        $this->handleVehicleImageUpload($vehicle, $request, $fieldNames, $userDirectory, 'vehicleImages');
+
+        $vehicle->licenseDetails()->updateOrCreate([
+            'license_plate_state' => $request->input('state'),
+            'license_plate_expiry' => $request->input('license_expiry'),
+            'is_expirable' => $request->input('is_expirable') ? 1 : 0,
+        ]);
+
+        $this->handleVehicleImageUpload($vehicle, $request, 'license_plate_image', $userDirectory, 'licenseDetails');
+
+
+        $vehicle->otherDetails()->updateOrCreate([
+            'length' => $request->input('length'),
+            'height' => $request->input('height'),
+            'width' => $request->input('width'),
+            'dimension_in' => $request->input('dimension_in'),
+            'is_available' => $request->input('is_available'),
+            'lift_gate' => $request->input('lift_gate') ? 1 : 0,
+            'hazmat' => $request->input('hazmat') ? 1 : 0,
+            'icc_bar' => $request->input('icc_bar') ? 1 : 0,
+            'tsa' => $request->input('tsa') ? 1 : 0,
+            'twic' => $request->input('twic') ? 1 : 0,
+            'pallet_jack' => $request->input('pallet_jack') ? 1 : 0,
+            'true_dock_high' => $request->input('true_dock_high') ? 1 : 0,
+            'tanker_endorsement' => $request->input('tanker_endorsement') ? 1 : 0,
+        ]);
+
+        $latestVehicle = Vehicle::where('driver_id', $user->driver->id)->with('licenseDetails', 'vehicleImages', 'otherDetails')->get();
+
+        return $latestVehicle;
+    }
+
+
+
 
     public function updateReminders(Request $request, $id)
     {
         $request->validate([
             'first_name' => 'required|string',
             'last_name' => 'required|string',
-            // Add other validation rules for the fields you want to update
         ]);
 
         $driver = Driver::findOrFail($id);
