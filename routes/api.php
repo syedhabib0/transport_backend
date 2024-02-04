@@ -36,7 +36,10 @@ Route::middleware(['auth:sanctum'])->group(function(){
         Route::post('/{id}/update', [DriverController::class, 'update']);
         Route::post('/{id}/updateGeneralInformation', [DriverController::class, 'updateGeneralInformation']);
         Route::post('/{id}/updateDocuments', [DriverController::class, 'updateDocuments']);
-        Route::post('/{id}/updateTrucks', [DriverController::class, 'updateTrucks']);
+        Route::post('/{id}/createTrucks', [DriverController::class, 'createTrucks']);
+        Route::post('/{id}/updateTrucks/{vehicleId}', [DriverController::class, 'updateTrucks']);
+        Route::get('/{id}/getVehicles', [DriverController::class, 'getVehicles']);
+        Route::get('/{id}/getVehicles/{vehicleId}', [DriverController::class, 'showVehicle']);
         Route::post('/{id}/updateReminders', [DriverController::class, 'updateReminders']);
         Route::post('/updateDriverStatus/{driver}', [DriverController::class, 'updateStatus']);
         Route::post('/searchDrivers', [DriverController::class, 'searchDrivers']);

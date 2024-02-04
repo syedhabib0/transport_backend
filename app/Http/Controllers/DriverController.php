@@ -99,13 +99,14 @@ class DriverController extends Controller
         $driverData = Driver::where('user_id', $id)->with(['insuranceDetails', 'licenseDetails'])->first();
 
         $profileData = Profile::where('user_id', $id)->first();
+        $vehicleData = Vehicle::where('driver_id', $driverData->id)->with('licenseDetails', 'vehicleImages', 'otherDetails')->first();
 
         $hired_user = $driverData->hired_by;
 
         $hired_by = User::where('id', $hired_user)->first();
         
 
-        return response()->json(['user' => $user, 'driverData' => $driverData, 'profileData' => $profileData, 'hired_by' => $hired_by]);
+        return response()->json(['user' => $user, 'driverData' => $driverData, 'profileData' => $profileData, 'hired_by' => $hired_by, 'vehicleData' => $vehicleData]);
     }
 
     public function update(Request $request, $id)
@@ -300,32 +301,32 @@ class DriverController extends Controller
             mkdir($userDirectory, 0777, true);
         }
 
-        $this->handleDriverImageUpload($driver, $request, 'license_photo_front', $userDirectory, 'licenseDetails');
-        $this->handleDriverImageUpload($driver, $request, 'license_photo_back', $userDirectory, 'licenseDetails');
-        $this->handleDriverImageUpload($driver, $request, 'insurance_photo_front', $userDirectory, 'insuranceDetails');
-        $this->handleDriverImageUpload($driver, $request, 'insurance_photo_back', $userDirectory, 'insuranceDetails');
+        $licenseFields = ['license_photo_front', 'license_photo_back'];
+        $insuranceFields = ['insurance_photo_front', 'insurance_photo_back'];
 
+        
+        $this->handleDriverImageUpload($driver, $request, $licenseFields, $userDirectory, 'licenseDetails');
+        $this->handleDriverImageUpload($driver, $request, $insuranceFields, $userDirectory, 'insuranceDetails');
+        
         $insurance = $driver->insuranceDetails()->updateOrCreate(
-            [
-                'driver_id' => $driver->id,
-            ],
+            ['driver_id' => $driver->id],
             [
                 'insurance_number' => $request['insurance_number'],
                 'insurance_expiry_date' => $request['insurance_expiry_date'],
             ]
         );
 
+
         $license = $driver->licenseDetails()->updateOrCreate(
-            [
-                'driver_id' => $driver->id,
-            ],
+            ['driver_id' => $driver->id],
             [            
                 'license_number' => $request['license_number'],
                 'license_expiry_date' => $request['license_expiry_date'],
                 'license_issuance_country' => $request['license_issuance_country'],
                 'license_issuance_state' => $request['license_issuance_state'],
-            ]
-        );
+                ]
+            );
+
 
         if($license && $insurance){
             return response()->json(['message' => 'Driver updated successfully', 'driver' => $driver]);
@@ -335,12 +336,19 @@ class DriverController extends Controller
         return response()->json(['message' => 'Driver updated successfully', 'driver' => $driver]);
     }
 
-    private function handleDriverImageUpload($driver, $request, $fieldName, $folderPath, $relationName)
+    private function handleDriverImageUpload($driver, $request, $fieldNames, $folderPath, $relationName)
     {
+        $relation = $driver->{$relationName}; // Get the insuranceDetails or licenseDetails relation
+        // Check if the relation is null, and if so, create it
+        if (!$relation) {
+            $relation = $driver->{$relationName}()->create([]);
+        }
+        // Convert single field name to an array for consistency
+        $fieldNames = is_array($fieldNames) ? $fieldNames : [$fieldNames];
+        foreach ($fieldNames as $fieldName) {
         if ($request->hasFile($fieldName)) {
-            $relation = $driver->{$relationName}; // Get the insuranceDetails or licenseDetails relation
-    
-            $oldImage = $relation->{$fieldName};
+            
+            $oldImage = $relation->{$fieldName} ?? '';
     
             $image = $request->file($fieldName);
     
@@ -352,15 +360,16 @@ class DriverController extends Controller
             $imagePath = $folderPath . '/' . $imageName;
     
             if ($status) {
-                $relation->updateOrCreate([
-                    $fieldName => $imagePath,
-                ]);
+                $relation->updateOrCreate(
+                    ['driver_id' => $driver->id],
+                    [$fieldName => $imagePath],
+                );
     
                 // Delete the old image if it exists
                 if ($oldImage && !empty($oldImage) && file_exists($folderPath . DIRECTORY_SEPARATOR . $oldImage)) {
                     unlink($folderPath . DIRECTORY_SEPARATOR . $oldImage);
                 }
-            }
+            }}
         }
     }
 
@@ -405,7 +414,7 @@ class DriverController extends Controller
         }
     }
 
-    public function updateTrucks(Request $request, $id)
+    public function createTrucks(Request $request, $id)
     {
         $request->validate([
             'vehicle_type' => 'required|string',
@@ -446,27 +455,95 @@ class DriverController extends Controller
         // Create a new vehicle
         $vehicle = $this->createVehicle($driver, $request, $user);
 
-        return response()->json(['message' => 'Truck Data updated successfully', 'driver' => $driver, 'vehicles' => $vehicle]);
+        return response()->json(['message' => 'Truck created successfully', 'driver' => $driver, 'vehicles' => $vehicle]);
     }
-
-    private function createVehicle($driver, $request, $user)
+    public function updateTrucks(Request $request, $id, $vehicleId)
     {
-        $createVehicle = $driver->vehicles()->create([
-            'driver_id' => $driver->id,
-            'vehicle_type' => $request->input('vehicle_type'),
-            'unit_number' => $request->input('unit_number'),
-            'make' => $request->input('make'),
-            'model' => $request->input('model'),
-            'payload_weight' => $request->input('payload_weight'),
+        $request->validate([
+            'vehicle_type' => 'nullable|string',
+            'unit_number' => 'nullable|string',
+            'make' => 'nullable|string',
+            'model' => 'nullable|string',
+            'payload_weight' => 'nullable|string',
+            'length' => 'nullable|string',
+            'width' => 'nullable|string',
+            'height' => 'nullable|string',
+            'dimension_in' => 'nullable|string',
+            'is_available' => 'nullable|string',
+            'lift_gate' => 'nullable|string',
+            'hazmat' => 'nullable|string',
+            'icc_bar' => 'nullable|string',
+            'tsa' => 'nullable|string',
+            'twic' => 'nullable|string',
+            'pallet_jack' => 'nullable|string',
+            'true_dock_high' => 'nullable|string',
+            'tanker_endorsement' => 'nullable|string',
+            'license_plate_image' => request()->hasFile('license_plate_image') ? 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048' : 'nullable',
+            'state' => 'nullable|string',
+            'license_expiry' => 'nullable|string',
+            'is_expirable' => 'nullable|string',
+            'front_image' => request()->hasFile('front_image') ? 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048' : 'nullable',
+            'back_image' => request()->hasFile('back_image') ? 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048' : 'nullable',
+            'left_image' => request()->hasFile('left_image') ? 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048' : 'nullable',
+            'right_image' => request()->hasFile('right_image') ? 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048' : 'nullable',
+            'cargo_image' => request()->hasFile('cargo_image') ? 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048' : 'nullable', 
         ]);
 
-        if ($createVehicle) {
-            $latestVehicle = $this->updateVehicleDetails($createVehicle, $request, $user);
-            return $latestVehicle;
-        }else{
-            return "Can't create Vehicle. Try Again!";
+        $user = User::where('id', $id)->with('profile', 'driver')->first();
+        $userId = $user->id;
+
+        $driver = Driver::where('user_id', $userId)->with('vehicles')->first();
+
+        if (!$driver) {
+            return response()->json(['error' => 'Driver not found'], 404);
         }
 
+        // Retrieve the specific vehicle by ID
+        $vehicle = $driver->vehicles()->find($vehicleId);
+
+        if (!$vehicle) {
+            return response()->json(['error' => 'Vehicle not found'], 404);
+        }
+
+        // Create a new vehicle
+        $updatedVehicle = $this->createVehicle($driver, $request, $user, $vehicle);
+
+        return response()->json(['message' => 'Truck Data updated successfully', 'driver' => $driver, 'vehicles' => $updatedVehicle]);
+    }
+
+    private function createVehicle($driver, $request, $user, $vehicle = null)
+    {
+        if ($vehicle) {
+            // If the vehicle exists, update its details
+            $vehicle->update([
+                'vehicle_type' => $request->input('vehicle_type'),
+                'unit_number' => $request->input('unit_number'),
+                'make' => $request->input('make'),
+                'model' => $request->input('model'),
+                'payload_weight' => $request->input('payload_weight'),
+            ]);
+    
+            // Update additional details and handle images
+            $latestVehicle = $this->updateVehicleDetails($vehicle, $request, $user);
+    
+            return $latestVehicle;
+        } else {
+            $createVehicle = $driver->vehicles()->create([
+                'driver_id' => $driver->id,
+                'vehicle_type' => $request->input('vehicle_type'),
+                'unit_number' => $request->input('unit_number'),
+                'make' => $request->input('make'),
+                'model' => $request->input('model'),
+                'payload_weight' => $request->input('payload_weight'),
+            ]);
+
+            if ($createVehicle) {
+                $latestVehicle = $this->updateVehicleDetails($createVehicle, $request, $user);
+                return $latestVehicle;
+            }else{
+                return "Can't update Vehicle. Try Again!";
+            }
+        }
     }
     private function updateVehicleDetails($vehicle, $request, $user)
     {
@@ -479,7 +556,9 @@ class DriverController extends Controller
         $fieldNames = ['front_image', 'back_image', 'left_image', 'right_image', 'cargo_image'];
         $this->handleVehicleImageUpload($vehicle, $request, $fieldNames, $userDirectory, 'vehicleImages');
 
-        $vehicle->licenseDetails()->updateOrCreate([
+        $vehicle->licenseDetails()->updateOrCreate(
+            ['vehicle_id' => $vehicle->id],
+            [
             'license_plate_state' => $request->input('state'),
             'license_plate_expiry' => $request->input('license_expiry'),
             'is_expirable' => $request->input('is_expirable') ? 1 : 0,
@@ -488,7 +567,9 @@ class DriverController extends Controller
         $this->handleVehicleImageUpload($vehicle, $request, 'license_plate_image', $userDirectory, 'licenseDetails');
 
 
-        $vehicle->otherDetails()->updateOrCreate([
+        $vehicle->otherDetails()->updateOrCreate(
+            ['vehicle_id' => $vehicle->id],
+            [
             'length' => $request->input('length'),
             'height' => $request->input('height'),
             'width' => $request->input('width'),
@@ -507,6 +588,31 @@ class DriverController extends Controller
         $latestVehicle = Vehicle::where('driver_id', $user->driver->id)->with('licenseDetails', 'vehicleImages', 'otherDetails')->get();
 
         return $latestVehicle;
+    }
+
+    public function getVehicles(Request $request, $id){
+        
+        $driver = Driver::where('user_id', $id)->first();
+
+        $vehicle = Vehicle::where('driver_id', $driver->id)->with('licenseDetails', 'vehicleImages', 'otherDetails')->get();
+        return response()->json([
+            'drivers' => $driver,
+            'vehicles' => $vehicle,
+        ]);
+
+        // return response()->json(['driver' => $driver, 'vehicles' => $vehicle]);
+    }
+    public function showVehicle(Request $request, $id, $vehicleId){
+        
+        $driver = Driver::where('user_id', $id)->first();
+
+        $vehicle = Vehicle::where('id', $vehicleId)->with('licenseDetails', 'vehicleImages', 'otherDetails')->get();
+        return response()->json([
+            'driver' => $driver,
+            'vehicle' => $vehicle,
+        ]);
+
+        // return response()->json(['driver' => $driver, 'vehicles' => $vehicle]);
     }
 
 

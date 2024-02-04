@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('driver_insurance_details', function (Blueprint $table) {
             $table->id();
             $table->foreignId('driver_id')->constrained('drivers');
-            $table->string('insurance_number');
-            $table->date('insurance_expiry_date');
+            $table->string('insurance_number')->nullable();
+            $table->date('insurance_expiry_date')->nullable();
             $table->string('insurance_photo_front')->nullable();
             $table->string('insurance_photo_back')->nullable();
             $table->timestamps();

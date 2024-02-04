@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('driver_license_details', function (Blueprint $table) {
             $table->id();
             $table->foreignId('driver_id')->constrained('drivers');
-            $table->string('license_number');
-            $table->date('license_expiry_date');
+            $table->string('license_number')->nullable();
+            $table->date('license_expiry_date')->nullable();
             $table->boolean('is_expirable')->default(true);
-            $table->string('license_issuance_country');
-            $table->string('license_issuance_state');
+            $table->string('license_issuance_country')->nullable();
+            $table->string('license_issuance_state')->nullable();
             $table->string('license_photo_front')->nullable();
             $table->string('license_photo_back')->nullable();
             $table->timestamps();
