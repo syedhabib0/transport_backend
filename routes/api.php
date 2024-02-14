@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\ImageController;
@@ -44,14 +45,16 @@ Route::middleware(['auth:sanctum'])->group(function(){
         Route::post('/updateDriverStatus/{driver}', [DriverController::class, 'updateStatus']);
         Route::post('/searchDrivers', [DriverController::class, 'searchDrivers']);
     });
-
+    
     // Loads Routes
     Route::group(['prefix'=>'loads'], function() {
         Route::get('/', [LoadController::class, 'index']);
         Route::post('/', [LoadController::class, 'store']);
         Route::post('/filter-loads', [LoadController::class, 'filterLoads']);
     });    
-
+    
 });
 
 Route::get('/images/{path}', [ImageController::class, 'show'])->where('path', '.*');
+
+Route::post('/messages', [ChatController::class, 'store']);
