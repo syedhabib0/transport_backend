@@ -16,7 +16,6 @@ return new class extends Migration
             $table->foreignId('driver_id')->constrained()->onDelete('cascade');
             $table->decimal('latitude', 10, 7); // Adjust precision as needed
             $table->decimal('longitude', 10, 7); // Adjust precision as needed
-            $table->timestamp('updated_at')->useCurrent();
             $table->timestamps();
         });
     }
