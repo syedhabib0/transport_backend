@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('otp')->nullable();
             $table->tinyInteger('is_admin')->default(0);
             $table->boolean('first_login')->default(true);
+            $table->text('fcm_token')->nullable();
             $table->timestamp('password_updated_at')->nullable();
             $table->timestamp('profile_updated_at')->nullable();
             $table->timestamp('otp_generated_at')->nullable();
