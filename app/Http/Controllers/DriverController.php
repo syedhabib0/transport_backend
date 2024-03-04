@@ -14,9 +14,19 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Mail;
 
 class DriverController extends Controller
 {
+    protected $driver;
+
+    public function __construct(
+        Driver $driver
+    )
+    {
+        $this->driver = $driver;
+    }
+
     public function index(Request $request){
         // Retrieve the "driver" role
         $driverRole = Role::where('name', 'driver')->first();
@@ -78,14 +88,9 @@ class DriverController extends Controller
 
 
         if($user){
-
-            // Send password reset notification
-            $user->notify(new DriverImportNotification($user, $password));
-
-            // redirect('/drivers');
-            return response()->json(['message' => 'Driver created successfully']);
+            Mail::to($request->email)->send(new DriverImportNotification($user, $password));
+            return successResponse('Driver created successfully', 200, $user);
         }else{
-            // redirect('dashboard');
             return response()->json(['message' => 'Some error occured on Server and Driver is not created. Please contact Administrator.']);
         }
 
@@ -685,5 +690,28 @@ class DriverController extends Controller
         $filteredDrivers = $drivers->get();
 
         return response()->json(['drivers' => $filteredDrivers]);
+    }
+
+    public function savelocation(Request $request)
+    {
+        $request->validate([
+            'location' => 'required',
+            'latitude' => 'required',
+            'longitude' => 'required',
+        ]);
+
+        try {
+            $driver = $this->driver->where('user_id', getCurrentUser()->id)->first();
+            if($driver){
+                $driver->location = $request->location;
+                $driver->save();
+                $driver->location()->updateOrCreate(['driver_id' => $driver->id],$request->only(['latitude', 'longitude']));
+                return successResponse('Driver location saved successfully', $driver);
+            }
+            return errorResponse('Driver not found', 404);
+        } catch (\Exception $e) {
+            return errorResponse($e->getMessage(), $e->getCode());
+        }
+
     }
 }

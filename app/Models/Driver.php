@@ -26,9 +26,9 @@ class Driver extends Model
         'hired_by',
         'status',
         'note',
-        'location', // Spatial field for storing the driver's real-time location
+        'location',
         'area',
-        'is_available', // Boolean to indicate whether the driver is available
+        'is_available',
     ];
     
     // Spatial field definition
@@ -36,11 +36,6 @@ class Driver extends Model
         'location' => 'point',
         'area' => 'polygon',
     ];
-
-    // protected $casts = [
-    //     'location' => Point::class,
-    //     'area' => Polygon::class,
-    // ];
 
 
     public function user()
@@ -86,6 +81,11 @@ class Driver extends Model
     public function loads()
     {
         return $this->hasMany(Load::class);
+    }
+
+    public function location()
+    {
+        return $this->hasOne(DriverLocation::class);
     }
 
     // // Broadcasting real-time location

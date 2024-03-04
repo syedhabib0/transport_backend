@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\Driver;
+use App\Models\Profile;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -46,6 +48,19 @@ class UserSeeder extends Seeder
             'password' => Hash::make('test3333'),
             'is_admin' => 0,
         ]);
+
+        $profile = new Profile([
+            'phone' => '00923459586145',
+        ]);
+        $user3->profile()->save($profile);
+
+        // Create a new profile associated with the user
+        $driver = new Driver([
+            'profile_id' => $profile->id,
+            'hired_by' => 1,
+        ]);
+
+        $user3->driver()->save($driver);
 
         $role1 = Role::create(['name' => 'admin']);
 
