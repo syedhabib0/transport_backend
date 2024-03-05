@@ -151,4 +151,48 @@ class LoadController extends Controller
         return response()->json(['loads' => $filteredLoads]);
     }
 
+    public function newOrders()
+    {
+        try {
+            $user_id = getCurrentUser()->id;
+            $driver = Driver::where('user_id', $user_id)->first();
+            $newOrders = Load::where('driver_id', $driver->id)->where('status', 'available')->get();
+            if($newOrders->isNotEmpty()){
+                return successResponse('New Orders found successfully', $newOrders);
+            }
+            return errorResponse('New Orders not found', 404);
+        } catch (\Exception $e) {
+            return errorResponse($e->getMessage(), $e->getCode());
+        }
+    }
+
+    public function activeOrders()
+    {
+        try {
+            $user_id = getCurrentUser()->id;
+            $driver = Driver::where('user_id', $user_id)->first();
+            $activeOrders = Load::where('driver_id', $driver->id)->where('status', 'active')->get();
+            if($activeOrders->isNotEmpty()){
+                return successResponse('Active Orders found successfully', $activeOrders);
+            }
+            return errorResponse('Active Orders not found', 404);
+        } catch (\Exception $e) {
+            return errorResponse($e->getMessage(), $e->getCode());
+        }
+    }
+
+    public function acceptOrder(Request $request, $orderId)
+    {
+        $request->validate([
+            'accepted' => 'required|boolean'
+        ]);
+
+        try {
+            $order = Load::where('id', $orderId)->update(['status'=> ($request->accepted == 1) ? 'active' : 'cancelled']);
+            return successResponse('Order status has been updated', $order);
+        } catch (\Exception $e) {
+            return errorResponse($e->getMessage(), $e->getCode());
+        }
+    }
+
 }

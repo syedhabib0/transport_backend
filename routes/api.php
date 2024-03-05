@@ -7,6 +7,7 @@ use App\Http\Controllers\ImageController;
 use App\Http\Controllers\LoadController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,6 +21,7 @@ use Illuminate\Support\Facades\Route;
 */
 // auth routes
 Route::post('/login', [UserController::class, 'login'])->name('loginApi');
+Route::get('/sanctum/csrf-cookie', [CsrfCookieController::class, 'show']);
 
 Route::middleware(['auth:sanctum'])->group(function(){
     // logout
@@ -30,6 +32,9 @@ Route::middleware(['auth:sanctum'])->group(function(){
 
     // Drivers Routes
     Route::group(['prefix'=>'drivers'], function() {
+        // for mobile
+        Route::post('/save-location', [DriverController::class, 'savelocation']);
+
         Route::get('/', [DriverController::class, 'index']);
         Route::post('/create', [DriverController::class, 'create']);
         Route::post('/create/bulk', [DriverController::class, 'uploadBulk']);     
@@ -52,6 +57,22 @@ Route::middleware(['auth:sanctum'])->group(function(){
         Route::post('/', [LoadController::class, 'store']);
         Route::post('/filter-loads', [LoadController::class, 'filterLoads']);
     });    
+
+    //mobile routes
+
+    // Dashboard mobile app Routes
+    Route::get('/dashboard-mobile', [DashboardController::class, 'dashboardMobile']);
+
+    // orders routes for mobile app
+    Route::group(['prefix'=>'orders'], function() {
+        Route::get('/new-orders', [LoadController::class, 'newOrders']);
+        Route::get('/active-orders', [LoadController::class, 'activeOrders']);
+        Route::post('/accept-order/{orderId}', [LoadController::class, 'acceptOrder']);
+    }); 
+
+    Route::group(['prefix'=>'profile'], function() {
+        Route::post('/update-driver-profile', [UserController::class, 'updateDriverProfile']);
+    }); 
     
 });
 

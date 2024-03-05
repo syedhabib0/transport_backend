@@ -24,7 +24,7 @@ return new class extends Migration
             $table->string('dropoff_location');
             $table->date('pickup_date')->nullable();
             $table->string('delivery_date')->nullable();
-            $table->string('status')->default('available');
+            $table->enum('status', ['available', 'active', 'cancelled', 'delivered'])->default('available');
             $table->decimal('total_fare', 8, 2)->nullable(); // Add this line
             $table->decimal('driver_fare', 8, 2)->nullable(); // Add this line
             $table->timestamps();

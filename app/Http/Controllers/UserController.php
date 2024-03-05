@@ -22,7 +22,7 @@ class UserController extends Controller
             'fcm_token' => 'nullable',
         ]);
 
-        $user = $this->user->where('email',$request->email)->first();
+        $user = $this->user->with('profile')->where('email',$request->email)->first();
         if(!$user || !Hash::check($request->password,$user->password)){
             return response()->json([
                 'message' => 'Invalid Credentials'
@@ -40,6 +40,16 @@ class UserController extends Controller
     
         return response()->json([
           "message"=>"logged out"
+        ]);
+    }
+
+    public function updateDriverProfile(Request $request)
+    {
+        $request->validate([
+            'first_name' => 'required',
+            'last_name' => 'required',
+            'email' => 'required|email',
+            'phone_number' => 'required',
         ]);
     }
 }

@@ -4,12 +4,12 @@ namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Notifications\Notification;
+use Illuminate\Mail\Mailable;
+use Illuminate\Queue\SerializesModels;
 
-class DriverImportNotification extends Notification
+class DriverImportNotification extends Mailable implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, SerializesModels;
 
     public $userData;
     public $password;
@@ -23,40 +23,8 @@ class DriverImportNotification extends Notification
         $this->password = $password;
     }
 
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @return array<int, string>
-     */
-    public function via(object $notifiable): array
+    public function build()
     {
-        return ['mail'];
-    }
-
-    /**
-     * Get the mail representation of the notification.
-     */
-    public function toMail(object $notifiable): MailMessage
-    {
-        return (new MailMessage)
-            ->subject('Driver Registration')
-            ->line('Welcome to our platform!')
-            ->line('Congratulations! '. $this->userData['first_name'] . ' ' . $this->userData['last_name'] .' You are successfully registered on IWS Transport Service')
-            ->line('Here is your password for login (remember to reset your password on first login): ' . $this->password)
-            ->action('<strong>Reset Password</strong>', url('/password/reset'))
-            ->line('Thank you for using our application!');
-    }
-
-    /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
-     */
-    public function toArray(object $notifiable): array
-    {
-        return [
-            // Additional data to be sent in the notification array
-            'user_data' => $this->userData,
-        ];
+        return $this->subject('Driver Registration')->markdown('emails.driver-registration-email', ['user_data' => $this->userData, 'password' => $this->password]);
     }
 }

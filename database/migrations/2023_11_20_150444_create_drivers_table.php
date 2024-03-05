@@ -18,8 +18,8 @@ return new class extends Migration
             $table->foreignId('hired_by')->nullable()->constrained('users');
             $table->string('status')->nullable();
             $table->text('note')->nullable();
-            $table->point('location')->nullable();
-            $table->polygon('area')->nullable();
+            $table->text('location')->nullable();
+            $table->text('area')->nullable();
             $table->boolean('is_available')->default(true);
             $table->timestamps();
         });
