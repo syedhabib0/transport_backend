@@ -6,8 +6,6 @@ use App\Http\Controllers\DriverController;
 use App\Http\Controllers\ImageController;
 use App\Http\Controllers\LoadController;
 use App\Http\Controllers\UserController;
-use Illuminate\Http\Request;
-use Illuminate\Routing\RouteGroup;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,7 +19,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 // auth routes
-Route::post('/login', [UserController::class, 'login']);
+Route::post('/login', [UserController::class, 'login'])->name('loginApi');
 
 Route::middleware(['auth:sanctum'])->group(function(){
     // logout
