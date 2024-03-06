@@ -26,4 +26,9 @@ class Profile extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function getProfilePhotoAttribute()
+    {
+        return asset('storage/' . $this->attributes['profile_photo']);
+    }
 }

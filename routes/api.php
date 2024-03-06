@@ -72,6 +72,8 @@ Route::middleware(['auth:sanctum'])->group(function(){
 
     Route::group(['prefix'=>'profile'], function() {
         Route::post('/update-driver-profile', [UserController::class, 'updateDriverProfile']);
+        Route::post('/update-driver-image', [UserController::class, 'updateDriverImage']);
+        Route::post('/update-driver-password', [UserController::class, 'updateDriverPassword']);
     }); 
     
 });
