@@ -29,6 +29,8 @@ class UserController extends Controller
                 'message' => 'Invalid Credentials'
             ],401);
         }
+        $user->fcm_token = $request->fcm_token;
+        $user->save();
         $token = $user->createToken($user->first_name.'-AuthToken')->plainTextToken;
         return response()->json([
             'user' => $user,
