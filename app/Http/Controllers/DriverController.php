@@ -89,7 +89,7 @@ class DriverController extends Controller
 
         if($user){
             Mail::to($request->email)->send(new DriverImportNotification($user, $password));
-            return successResponse('Driver created successfully', 200, $user);
+            return successResponse('Driver created successfully', $user);
         }else{
             return response()->json(['message' => 'Some error occured on Server and Driver is not created. Please contact Administrator.']);
         }
