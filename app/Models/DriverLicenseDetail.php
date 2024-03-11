@@ -9,16 +9,7 @@ class DriverLicenseDetail extends Model
 {
     use HasFactory;
     
-    protected $fillable = [
-        'driver_id',
-        'license_number',
-        'license_expiry_date',
-        'is_expirable',
-        'license_issuance_country',
-        'license_issuance_state',
-        'license_photo_front',
-        'license_photo_back',
-    ];
+    protected $guarded = [];
 
     public function driver()
     {

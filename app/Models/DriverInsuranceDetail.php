@@ -9,13 +9,7 @@ class DriverInsuranceDetail extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'driver_id',
-        'insurance_number',
-        'insurance_expiry_date',
-        'insurance_photo_front',
-        'insurance_photo_back',
-    ];
+    protected $guarded = [];
 
     public function driver()
     {

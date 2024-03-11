@@ -295,15 +295,15 @@ class DriverController extends Controller
         
         $user = User::where('id', $id)->with('profile', 'driver')->first();
         $userId = $user->id;
-
+        
         $driver = Driver::where('user_id', $userId)->with('insuranceDetails', 'licenseDetails')->first();
 
         // Retrieve old image names from the database
         // $oldImages = $this->getOldImages($userId);
 
-        $userDirectory = "assets/images/users/{$userId}_{$user->first_name}_{$user->last_name}";
+        $userDirectory = "driver_details/{$userId}_{$user->first_name}_{$user->last_name}";
         if (!file_exists($userDirectory)) {
-            mkdir($userDirectory, 0777, true);
+            mkdir("storage/" . $userDirectory, 0777, true);
         }
 
         $licenseFields = ['license_photo_front', 'license_photo_back'];
@@ -321,16 +321,15 @@ class DriverController extends Controller
             ]
         );
 
-
         $license = $driver->licenseDetails()->updateOrCreate(
             ['driver_id' => $driver->id],
-            [            
+            [
                 'license_number' => $request['license_number'],
                 'license_expiry_date' => $request['license_expiry_date'],
                 'license_issuance_country' => $request['license_issuance_country'],
                 'license_issuance_state' => $request['license_issuance_state'],
-                ]
-            );
+            ]
+        );
 
 
         if($license && $insurance){
@@ -361,7 +360,7 @@ class DriverController extends Controller
             $imageName = "{$driver->id}_{$fieldName}_" . time() . '.' . $image->getClientOriginalExtension();
     
             // Store the image in the specified folder
-            $status = $image->move(public_path($folderPath), $imageName);
+            $status = $image->move(public_path('storage/' . $folderPath), $imageName);
             $imagePath = $folderPath . '/' . $imageName;
     
             if ($status) {
