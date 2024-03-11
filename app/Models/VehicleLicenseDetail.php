@@ -21,4 +21,11 @@ class VehicleLicenseDetail extends Model
     {
         return $this->belongsTo(Vehicle::class);
     }
+
+    public function getLicensePlateImageAttribute()
+    {
+        return isset($this->attributes['license_plate_image'])
+        ? asset('storage/' . $this->attributes['license_plate_image'])
+        : null;
+    }
 }

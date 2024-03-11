@@ -230,13 +230,13 @@ class DriverController extends Controller
             // Generate a unique name for the image
             $imageName = "{$id}_photo_" . time() . '.' . $image->getClientOriginalExtension();
     
-            $folderPath = "assets/images/users/{$id}_{$request['first_name']}_{$request['last_name']}";
-            if (!file_exists($folderPath)) {
-                mkdir($folderPath, 0777, true);
+            $folderPath = "images/users/{$id}_{$request['first_name']}_{$request['last_name']}";
+            if (!file_exists("storage/" . $folderPath)) {
+                mkdir('storage/' . $folderPath, 0777, true);
             }
             
             // Store the image in the specified folder
-            $status = $image->move(public_path($folderPath), $imageName);
+            $status = $image->move(public_path('storage/' . $folderPath), $imageName);
             $fullPath = $folderPath.'/'.$imageName;
     
             if($status){    
@@ -263,8 +263,8 @@ class DriverController extends Controller
                 }
             }
             
-            if( $old_image && !empty($old_image) && file_exists($folderPath.DIRECTORY_SEPARATOR.$old_image)){
-                unlink($folderPath.DIRECTORY_SEPARATOR.$old_image);
+            if( $old_image && !empty($old_image) && file_exists('storage/' . $folderPath.DIRECTORY_SEPARATOR.$old_image)){
+                unlink('storage/' . $folderPath.DIRECTORY_SEPARATOR.$old_image);
             }
     
             return response()->json(['message' => 'Driver Data updated successfully', 'driver' => $user]);
@@ -302,7 +302,7 @@ class DriverController extends Controller
         // $oldImages = $this->getOldImages($userId);
 
         $userDirectory = "driver_details/{$userId}_{$user->first_name}_{$user->last_name}";
-        if (!file_exists($userDirectory)) {
+        if (!file_exists("storage/" . $userDirectory)) {
             mkdir("storage/" . $userDirectory, 0777, true);
         }
 
@@ -370,8 +370,8 @@ class DriverController extends Controller
                 );
     
                 // Delete the old image if it exists
-                if ($oldImage && !empty($oldImage) && file_exists($folderPath . DIRECTORY_SEPARATOR . $oldImage)) {
-                    unlink($folderPath . DIRECTORY_SEPARATOR . $oldImage);
+                if ($oldImage && !empty($oldImage) && file_exists('storage/' . $folderPath . DIRECTORY_SEPARATOR . $oldImage)) {
+                    unlink('storage/' . $folderPath . DIRECTORY_SEPARATOR . $oldImage);
                 }
             }}
         }
@@ -380,26 +380,31 @@ class DriverController extends Controller
     private function handleVehicleImageUpload($vehicle, $request, $fieldNames, $folderPath, $relationName)
     {
         $relation = $vehicle->{$relationName};
-    
+        
         // Check if the relation is null, and if so, create it
         if (!$relation) {
             $relation = $vehicle->{$relationName}()->create([]);
         }
-
+        
         // Convert single field name to an array for consistency
         $fieldNames = is_array($fieldNames) ? $fieldNames : [$fieldNames];
 
-    
+        
         foreach ($fieldNames as $fieldName) {
             if ($request->hasFile($fieldName)) {
+                
+                $relation = $vehicle->{$relationName};
+                if (!$relation) {
+                    $relation = $vehicle->{$relationName}()->create([]);
+                }
                 $oldImage = $relation->{$fieldName};
                 $image = $request->file($fieldName);
-    
+                
                 // Generate a unique name for the image
                 $imageName = "{$vehicle->id}_vehicles_{$fieldName}_" . time() . '.' . $image->getClientOriginalExtension();
     
                 // Store the image in the specified folder
-                $status = $image->move(public_path($folderPath), $imageName);
+                $status = $image->move(public_path('storage/' . $folderPath), $imageName);
                 $imagePath = $folderPath . '/' . $imageName;
     
                 if ($status) {
@@ -410,8 +415,8 @@ class DriverController extends Controller
                     );
     
                     // Delete the old image if it exists
-                    if ($oldImage && !empty($oldImage) && file_exists($folderPath . DIRECTORY_SEPARATOR . $oldImage)) {
-                        unlink($folderPath . DIRECTORY_SEPARATOR . $oldImage);
+                    if ($oldImage && !empty($oldImage) && file_exists('storage/' . $folderPath . DIRECTORY_SEPARATOR . $oldImage)) {
+                        unlink('storage/' . $folderPath . DIRECTORY_SEPARATOR . $oldImage);
                     }
                 }
             }
@@ -449,18 +454,19 @@ class DriverController extends Controller
             'right_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             'cargo_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', 
         ]);
-
+        
         $user = User::where('id', $id)->with('profile', 'driver')->first();
         $userId = $user->id;
 
         $driver = Driver::where('user_id', $userId)->with('vehicles')->first();
 
-
+        
         // Create a new vehicle
         $vehicle = $this->createVehicle($driver, $request, $user);
 
         return response()->json(['message' => 'Truck created successfully', 'driver' => $driver, 'vehicles' => $vehicle]);
     }
+
     public function updateTrucks(Request $request, $id, $vehicleId)
     {
         $request->validate([
@@ -552,14 +558,15 @@ class DriverController extends Controller
     private function updateVehicleDetails($vehicle, $request, $user)
     {
         // Your logic for updating license details and other details
-        $userDirectory = "assets/images/users/{$user->id}_{$user->first_name}_{$user->last_name}";
-        if (!file_exists($userDirectory)) {
-            mkdir($userDirectory, 0777, true);
+        $userDirectory = "driver_vehicle_images/{$user->id}_{$user->first_name}_{$user->last_name}";
+        if (!file_exists("storage/" . $userDirectory)) {
+            mkdir("storage/" . $userDirectory, 0777, true);
         }
-
+        
         $fieldNames = ['front_image', 'back_image', 'left_image', 'right_image', 'cargo_image'];
+        
         $this->handleVehicleImageUpload($vehicle, $request, $fieldNames, $userDirectory, 'vehicleImages');
-
+        
         $vehicle->licenseDetails()->updateOrCreate(
             ['vehicle_id' => $vehicle->id],
             [
@@ -603,20 +610,16 @@ class DriverController extends Controller
             'drivers' => $driver,
             'vehicles' => $vehicle,
         ]);
-
-        // return response()->json(['driver' => $driver, 'vehicles' => $vehicle]);
     }
     public function showVehicle(Request $request, $id, $vehicleId){
         
         $driver = Driver::where('user_id', $id)->first();
 
-        $vehicle = Vehicle::where('id', $vehicleId)->with('licenseDetails', 'vehicleImages', 'otherDetails')->get();
+        $vehicle = Vehicle::where('id', $vehicleId)->with('licenseDetails', 'vehicleImages', 'otherDetails')->first();
         return response()->json([
             'driver' => $driver,
             'vehicle' => $vehicle,
         ]);
-
-        // return response()->json(['driver' => $driver, 'vehicles' => $vehicle]);
     }
 
 
@@ -712,5 +715,50 @@ class DriverController extends Controller
             return errorResponse($e->getMessage(), $e->getCode());
         }
 
+    }
+
+    public function updateDriverTruckDetail(Request $request)
+    {
+        $request->validate([
+            'vehicle_type' => 'nullable|in:sprinter-vans,box-trucks,reefers,hazmat,straight-trucks,dry-van,flatbed,conestoga',
+            'unit_number' => 'nullable|string',
+            'license_plate_image' => request()->hasFile('license_plate_image') ? 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048' : 'nullable',
+            'license_expiry' => 'nullable|date_format:Y-m-d',
+        ]);
+
+        $currentUser = getCurrentUser();
+        $user = User::where('id', $currentUser->id)->first();
+
+        $driver = Driver::where('user_id', $currentUser->id)->first();
+
+        if (!$driver) {
+            return errorResponse('Driver not found', 404);
+        }
+
+        $vehicle = $driver->vehicles()->latest('created_at')->first();
+
+        if (!$vehicle) {
+            return errorResponse('Vehicle not found', 404);
+        }
+        
+        $vehicle->update([
+            'vehicle_type' => $request->input('vehicle_type'),
+            'unit_number' => $request->input('unit_number')
+        ]);
+        
+        $vehicle->licenseDetails()->updateOrCreate(
+            ['vehicle_id' => $vehicle->id],
+            [
+            'license_plate_expiry' => $request->input('license_expiry')
+        ]);
+        
+        $userDirectory = "driver_vehicle_images/{$user->id}_{$user->first_name}_{$user->last_name}";
+        if (!file_exists("storage/" . $userDirectory)) {
+            mkdir("storage/" . $userDirectory, 0777, true);
+        }
+
+        $this->handleVehicleImageUpload($vehicle, $request, 'license_plate_image', $userDirectory, 'licenseDetails');
+
+        return successResponse('Truck Data updated successfully', $vehicle);
     }
 }

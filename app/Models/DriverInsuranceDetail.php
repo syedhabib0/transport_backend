@@ -15,4 +15,18 @@ class DriverInsuranceDetail extends Model
     {
         return $this->belongsTo(Driver::class);
     }
+
+    public function getInsurancePhotoFrontAttribute()
+    {
+        return isset($this->attributes['insurance_photo_front'])
+        ? asset('storage/' . $this->attributes['insurance_photo_front'])
+        : null;
+    }
+
+    public function getInsurancePhotoBackAttribute()
+    {
+        return isset($this->attributes['insurance_photo_back'])
+        ? asset('storage/' . $this->attributes['insurance_photo_back'])
+        : null;
+    }
 }

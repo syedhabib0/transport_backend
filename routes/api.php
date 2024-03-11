@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DriverController;
 use App\Http\Controllers\ImageController;
 use App\Http\Controllers\LoadController;
+use App\Http\Controllers\TruckController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
@@ -49,6 +50,7 @@ Route::middleware(['auth:sanctum'])->group(function(){
         Route::post('/{id}/updateReminders', [DriverController::class, 'updateReminders']);
         Route::post('/updateDriverStatus/{driver}', [DriverController::class, 'updateStatus']);
         Route::post('/searchDrivers', [DriverController::class, 'searchDrivers']);
+        Route::post('/update-truck-detail', [DriverController::class, 'updateDriverTruckDetail']);
     });
     
     // Loads Routes
@@ -74,6 +76,10 @@ Route::middleware(['auth:sanctum'])->group(function(){
         Route::post('/update-driver-profile', [UserController::class, 'updateDriverProfile']);
         Route::post('/update-driver-image', [UserController::class, 'updateDriverImage']);
         Route::post('/update-driver-password', [UserController::class, 'updateDriverPassword']);
+    }); 
+
+    Route::group(['prefix'=>'truck'], function() {
+        Route::get('/get-truck-types', [TruckController::class, 'getTruckTypes']);
     }); 
     
 });

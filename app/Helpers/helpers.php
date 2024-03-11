@@ -83,4 +83,20 @@ if (!function_exists('paginate')) {
             return $paginationArray;
         }
     }
+
+    if (!function_exists('getTruckTypes')) {
+        function getTruckTypes()
+        {
+            return [
+                'sprinter-vans' => 'Sprinter Vans',
+                'box-trucks' => 'Box Trucks',
+                'reefers' => 'Reefers',
+                'hazmat' => 'Hazmat',
+                'straight-trucks' => 'Straight Trucks',
+                'dry-van' => 'Dry Van',
+                'flatbed' => 'Flatbed',
+                'conestoga' => 'Conestoga'
+            ];
+        }
+    }
 }

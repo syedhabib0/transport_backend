@@ -14,7 +14,16 @@ return new class extends Migration
         Schema::create('vehicles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('driver_id')->constrained('drivers');
-            $table->string('vehicle_type');
+            $table->enum('vehicle_type', [
+                'sprinter-vans',
+                'box-trucks',
+                'reefers',
+                'hazmat',
+                'straight-trucks',
+                'dry-van',
+                'flatbed',
+                'conestoga',
+                 ]);
             $table->string('unit_number');
             $table->string('make');
             $table->string('model');
