@@ -99,4 +99,18 @@ if (!function_exists('paginate')) {
             ];
         }
     }
+
+    if (!function_exists('getDriverStatus')) {
+        function getDriverStatus()
+        {
+            return [
+                "available" => "Available",
+                "not-available" => "Not Available",
+                "will-be-available" => "Will Be Available",
+                "under-our-load" => "Under Our Load",
+                "under-our-bid" => "Under Our Bid",
+                "suspended" => "Suspended"
+            ];
+        }
+    }
 }

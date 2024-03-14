@@ -51,6 +51,7 @@ Route::middleware(['auth:sanctum'])->group(function(){
         Route::post('/updateDriverStatus/{driver}', [DriverController::class, 'updateStatus']);
         Route::post('/searchDrivers', [DriverController::class, 'searchDrivers']);
         Route::post('/update-truck-detail', [DriverController::class, 'updateDriverTruckDetail']);
+        Route::post('/search-driver-locations', [DriverController::class, 'searchDriverLocations']);
     });
     
     // Loads Routes
@@ -65,6 +66,8 @@ Route::middleware(['auth:sanctum'])->group(function(){
     // Dashboard mobile app Routes
     Route::get('/dashboard-mobile', [DashboardController::class, 'dashboardMobile']);
 
+    // get driver statuses
+    Route::get('/get-driver-statuses', [DriverController::class, 'getDriverStatus']);
     // orders routes for mobile app
     Route::group(['prefix'=>'orders'], function() {
         Route::get('/new-orders', [LoadController::class, 'newOrders']);

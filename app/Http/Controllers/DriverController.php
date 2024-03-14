@@ -6,11 +6,13 @@ use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\DriversImport;
 use App\Models\Driver;
+use App\Models\DriverLocation;
 use App\Models\Profile;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Notifications\DriverImportNotification;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
@@ -213,7 +215,7 @@ class DriverController extends Controller
             'dob' => 'required|date',
             'phone' => 'required',
             'hired_by' => 'nullable',
-            'status' => 'required|in:available,not available,will be available,under our load,under our bid,suspended',
+            'status' => 'required|in:available,not-available,will-be-available,under-our-load,under-our-bid,suspended',
             'note' => 'nullable',
         ]);
 
@@ -760,5 +762,63 @@ class DriverController extends Controller
         $this->handleVehicleImageUpload($vehicle, $request, 'license_plate_image', $userDirectory, 'licenseDetails');
 
         return successResponse('Truck Data updated successfully', $vehicle);
+    }
+    
+
+    public function searchDriverLocations(Request $request)
+    {
+        $request->validate([
+            'longitude' => 'required',
+            'latitude' => 'required',
+            'radius' => 'required',
+        ]);
+        try {
+            $searchLatitude = $request->latitude;
+            $searchLongitude = $request->longitude;
+            $radiusMiles = $request->radius;
+
+            $driverLocations = DriverLocation::select('driver_id', 'latitude', 'longitude')
+                            ->with('driver.user')
+                            ->get();
+
+            $distances = [];
+            foreach ($driverLocations as $location) {
+                $distance = $this->calculateDistance(
+                    $searchLatitude,
+                    $searchLongitude,
+                    $location->latitude,
+                    $location->longitude
+                );
+                if ($distance <= $radiusMiles) {
+                    $distances[] = $location;
+                }
+            }
+
+            if(!empty($distances)){
+                return successResponse('Drivers found successfully', $distances);
+            }
+            return errorResponse('Drivers not found', 404);
+        } catch (\Exception $e) {
+            return errorResponse($e->getMessage(), $e->getCode());
+        }
+
+    }
+
+    protected function calculateDistance($lat1, $lon1, $lat2, $lon2)
+    {
+        $earthRadius = 3959;
+        $latDiff = deg2rad($lat2 - $lat1);
+        $lonDiff = deg2rad($lon2 - $lon1);
+        $a = sin($latDiff / 2) * sin($latDiff / 2) +
+            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+            sin($lonDiff / 2) * sin($lonDiff / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        $distance = $earthRadius * $c;
+        return $distance;
+    }
+
+    public function getDriverStatus()
+    {
+        return successResponse('Driver Statuses fetched successfully', getDriverStatus());
     }
 }
