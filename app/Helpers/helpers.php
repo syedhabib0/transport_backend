@@ -1,6 +1,8 @@
 <?php
 
 use Carbon\Carbon;
+use Kreait\Laravel\Firebase\Facades\Firebase;
+use Kreait\Firebase\Messaging\CloudMessage;
 
 if (!function_exists('getCurrentUser')) {
     function getCurrentUser()
@@ -83,34 +85,48 @@ if (!function_exists('paginate')) {
             return $paginationArray;
         }
     }
+}
 
-    if (!function_exists('getTruckTypes')) {
-        function getTruckTypes()
-        {
-            return [
-                'sprinter-vans' => 'Sprinter Vans',
-                'box-trucks' => 'Box Trucks',
-                'reefers' => 'Reefers',
-                'hazmat' => 'Hazmat',
-                'straight-trucks' => 'Straight Trucks',
-                'dry-van' => 'Dry Van',
-                'flatbed' => 'Flatbed',
-                'conestoga' => 'Conestoga'
-            ];
-        }
+if (!function_exists('getTruckTypes')) {
+    function getTruckTypes()
+    {
+        return [
+            'sprinter-vans' => 'Sprinter Vans',
+            'box-trucks' => 'Box Trucks',
+            'reefers' => 'Reefers',
+            'hazmat' => 'Hazmat',
+            'straight-trucks' => 'Straight Trucks',
+            'dry-van' => 'Dry Van',
+            'flatbed' => 'Flatbed',
+            'conestoga' => 'Conestoga'
+        ];
     }
+}
 
-    if (!function_exists('getDriverStatus')) {
-        function getDriverStatus()
-        {
-            return [
-                "available" => "Available",
-                "not-available" => "Not Available",
-                "will-be-available" => "Will Be Available",
-                "under-our-load" => "Under Our Load",
-                "under-our-bid" => "Under Our Bid",
-                "suspended" => "Suspended"
-            ];
-        }
+if (!function_exists('getDriverStatus')) {
+    function getDriverStatus()
+    {
+        return [
+            "available" => "Available",
+            "not-available" => "Not Available",
+            "will-be-available" => "Will Be Available",
+            "under-our-load" => "Under Our Load",
+            "under-our-bid" => "Under Our Bid",
+            "suspended" => "Suspended"
+        ];
+    }
+}
+
+if (!function_exists('sendPushNotification')) {
+    function sendPushNotification($title, $body, $fcmToken)
+    {
+        $message = CloudMessage::fromArray([
+            'token' => $fcmToken,
+            'notification' => [
+                'title' => $title,
+                'body' => $body
+            ],
+        ]);
+        Firebase::messaging()->send($message);
     }
 }
