@@ -60,7 +60,7 @@ class LoadController extends Controller
 
         $user_id = Auth::id();
 
-        $driver = Driver::where('id', $validatedData['driver'])->with(['user','profile','hired_by', 'details','vehicles']);
+        $driver = Driver::where('id', $validatedData['driver'])->with(['user','profile','details','vehicles'])->first();
 
         // Create a new trip using the validated data
         $load = Load::create([
@@ -76,7 +76,9 @@ class LoadController extends Controller
         ]);
 
         if ($load) {
-            // Trip added successfully
+            if (!is_null($driver->user->fcm_token)) {
+                sendPushNotification('New Order', 'You have recieved a new order from iws', $driver->user->fcm_token);
+            }
             return response()->json(['success' => true, 'message' => 'Load added successfully']);
         } else {
             // Failed to add load
@@ -188,7 +190,11 @@ class LoadController extends Controller
         ]);
 
         try {
-            $order = Load::where('id', $orderId)->update(['status'=> ($request->accepted == 1) ? 'active' : 'cancelled']);
+            $order = Load::where('id', $orderId)->with('driver')->first();
+            $order->status = ($request->accepted == 1) ? 'active' : 'cancelled';
+            $order->save();
+            $order->driver->status = ($request->accepted == 1) ? 'not-available' : 'available';
+            $order->driver->save();
             return successResponse('Order status has been updated', $order);
         } catch (\Exception $e) {
             return errorResponse($e->getMessage(), $e->getCode());

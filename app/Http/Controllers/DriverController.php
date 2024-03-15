@@ -813,7 +813,7 @@ class DriverController extends Controller
             if(!empty($distances)){
                 return successResponse('Drivers found successfully', $distances);
             }
-            return errorResponse('Drivers not found');
+            return successResponse('Drivers not found successfully');
         } catch (\Exception $e) {
             return errorResponse($e->getMessage(), $e->getCode());
         }
