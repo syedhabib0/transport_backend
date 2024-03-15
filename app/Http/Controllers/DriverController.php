@@ -12,7 +12,6 @@ use App\Models\User;
 use App\Models\Vehicle;
 use App\Notifications\DriverImportNotification;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
@@ -40,12 +39,12 @@ class DriverController extends Controller
             // Retrieve all users with the "driver" role
             $drivers = $driverRole->users()->with('profile', 'driver')->paginate($perPage);
 
-            // You can now use $drivers as a collection of users with the "driver" role
-            return response()->json([
+            $data = [
                 'drivers' => $drivers->items(),
                 'current_page' => $drivers->currentPage(),
                 'last_page' => $drivers->lastPage(),
-            ]);
+            ];
+            return successResponse('Drivers fetched successfully', $data);
         } else {
             return response()->json(['error' => 'Role not found'], 404);
         }
@@ -776,11 +775,28 @@ class DriverController extends Controller
             $searchLatitude = $request->latitude;
             $searchLongitude = $request->longitude;
             $radiusMiles = $request->radius;
-
             $driverLocations = DriverLocation::select('driver_id', 'latitude', 'longitude')
-                            ->with('driver.user')
-                            ->get();
-
+            ->with(['driver.user'])
+            ->whereHas('driver', function ($query) use ($request) {
+                if (!empty($request['driver_status'])) {
+                    $query->whereIn('status', $request['driver_status']);
+                }
+            })
+            ->whereHas('driver.vehicles', function ($query) use ($request) {
+                if (isset($request['truck_type'])) {
+                    $query->where('vehicle_type', $request['truck_type']);
+                }
+            })
+            ->whereHas('driver.vehicles.otherDetails', function ($query) use ($request) {
+                $query->where('lift_gate', $request['lift_gate'] ?? 0)
+                    ->where('hazmat', $request['hazmat'] ?? 0)
+                    ->where('icc_bar', $request['icc_bar'] ?? 0)
+                    ->where('tsa', $request['tsa'] ?? 0)
+                    ->where('twic', $request['twic'] ?? 0)
+                    ->where('pallet_jack', $request['pallet_jack'] ?? 0)
+                    ->where('true_dock_high', $request['true_dock_high'] ?? 0)
+                    ->where('tanker_endorsement', $request['tanker_endorsement'] ?? 0);
+            })->get();
             $distances = [];
             foreach ($driverLocations as $location) {
                 $distance = $this->calculateDistance(
@@ -797,7 +813,7 @@ class DriverController extends Controller
             if(!empty($distances)){
                 return successResponse('Drivers found successfully', $distances);
             }
-            return errorResponse('Drivers not found', 404);
+            return errorResponse('Drivers not found');
         } catch (\Exception $e) {
             return errorResponse($e->getMessage(), $e->getCode());
         }
