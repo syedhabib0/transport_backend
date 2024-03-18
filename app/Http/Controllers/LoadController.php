@@ -56,6 +56,10 @@ class LoadController extends Controller
             'pickup_date' => 'required|date',
             'total_fare' => 'required|numeric',
             'driver_fare' => 'required|numeric',
+            'pickup_latitude' => 'required',
+            'pickup_longitude' => 'required',
+            'drop_off_latitude' => 'required',
+            'drop_off_longitude' => 'required'
         ]);
 
         $user_id = Auth::id();

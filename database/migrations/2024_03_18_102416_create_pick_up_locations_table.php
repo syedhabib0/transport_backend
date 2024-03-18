@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('load_statuses', function (Blueprint $table) {
+        Schema::create('pick_up_locations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('load_id')->constrained('loads');
             $table->decimal('latitude', 10, 8);
@@ -25,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('load_statuses');
+        Schema::dropIfExists('pick_up_locations');
     }
 };

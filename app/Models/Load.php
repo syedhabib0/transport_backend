@@ -30,6 +30,7 @@ class Load extends Model
     {
         return $this->belongsTo(Driver::class);
     }
+
     public function vehicle()
     {
         return $this->belongsTo(Vehicle::class);
@@ -38,5 +39,15 @@ class Load extends Model
     public function documents()
     {
         return $this->hasMany(LoadDocument::class);
+    }
+
+    public function pickUpLocation()
+    {
+        return $this->hasOne(PickUpLocation::class);
+    }
+
+    public function dropOffLocation()
+    {
+        return $this->hasOne(DropOffLocation::class);
     }
 }
