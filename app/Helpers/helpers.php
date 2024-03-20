@@ -91,6 +91,7 @@ if (!function_exists('getTruckTypes')) {
     function getTruckTypes()
     {
         return [
+            'all' => 'All Type',
             'sprinter-vans' => 'Sprinter Vans',
             'box-trucks' => 'Box Trucks',
             'reefers' => 'Reefers',

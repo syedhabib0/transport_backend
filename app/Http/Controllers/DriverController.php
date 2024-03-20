@@ -783,7 +783,7 @@ class DriverController extends Controller
                 }
             })
             ->whereHas('driver.vehicles', function ($query) use ($request) {
-                if (isset($request['truck_type'])) {
+                if (isset($request['truck_type']) && $request['truck_type'] != 'all') {
                     $query->where('vehicle_type', $request['truck_type']);
                 }
             })
@@ -813,7 +813,7 @@ class DriverController extends Controller
             if(!empty($distances)){
                 return successResponse('Drivers found successfully', $distances);
             }
-            return successResponse('Drivers not found successfully');
+            return successResponse('Drivers not found');
         } catch (\Exception $e) {
             return errorResponse($e->getMessage(), $e->getCode());
         }

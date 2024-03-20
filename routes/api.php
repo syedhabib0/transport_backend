@@ -73,6 +73,9 @@ Route::middleware(['auth:sanctum'])->group(function(){
         Route::get('/new-orders', [LoadController::class, 'newOrders']);
         Route::get('/active-orders', [LoadController::class, 'activeOrders']);
         Route::post('/accept-order/{orderId}', [LoadController::class, 'acceptOrder']);
+        Route::post('/start-trip/{orderId}', [LoadController::class, 'startTrip']);
+        Route::post('/send-track-location/{orderId}', [LoadController::class, 'sendTrackLocation']);
+        Route::post('/order-delivered/{orderId}', [LoadController::class, 'orderDelivered']);
     }); 
 
     Route::group(['prefix'=>'profile'], function() {

@@ -62,6 +62,12 @@ class LoadController extends Controller
             'drop_off_longitude' => 'required'
         ]);
 
+        $loadExist = Load::where('driver_id', $validatedData['driver'])->whereIn('status', ['active', 'on-going'])->get();
+
+        if ($loadExist->isNotEmpty()) {
+            return errorResponse('The load is already assigned to the driver');
+        }
+
         $user_id = Auth::id();
 
         $driver = Driver::where('id', $validatedData['driver'])->with(['user','profile','details','vehicles'])->first();
@@ -79,11 +85,26 @@ class LoadController extends Controller
             'driver_fare' => $validatedData['driver_fare'],
         ]);
 
+        $load->pickUpLocation()->updateOrCreate(['load_id' => $load->id], [
+            'latitude' => $validatedData['pickup_latitude'],
+            'longitude' => $validatedData['pickup_longitude'],
+        ]);
+
+        $load->dropOffLocation()->updateOrCreate(['load_id' => $load->id], [
+            'latitude' => $validatedData['drop_off_latitude'],
+            'longitude' => $validatedData['drop_off_longitude'],
+        ]);
+
+        $load->currentLocation()->updateOrCreate(['load_id' => $load->id], [
+            'latitude' => $validatedData['pickup_latitude'],
+            'longitude' => $validatedData['pickup_longitude'],
+        ]);
+
         if ($load) {
             if (!is_null($driver->user->fcm_token)) {
                 sendPushNotification('New Order', 'You have recieved a new order from iws', $driver->user->fcm_token);
             }
-            return response()->json(['success' => true, 'message' => 'Load added successfully']);
+            return successResponse('Load added successfully', $load);
         } else {
             // Failed to add load
             return response()->json(['success' => false, 'message' => 'Failed to add load'], 500);
@@ -162,7 +183,8 @@ class LoadController extends Controller
         try {
             $user_id = getCurrentUser()->id;
             $driver = Driver::where('user_id', $user_id)->first();
-            $newOrders = Load::where('driver_id', $driver->id)->where('status', 'available')->get();
+            $newOrders = Load::with(['pickUpLocation', 'dropOffLocation'])
+            ->where('driver_id', $driver->id)->where('status', 'available')->get();
             if($newOrders->isNotEmpty()){
                 return successResponse('New Orders found successfully', $newOrders);
             }
@@ -177,7 +199,8 @@ class LoadController extends Controller
         try {
             $user_id = getCurrentUser()->id;
             $driver = Driver::where('user_id', $user_id)->first();
-            $activeOrders = Load::where('driver_id', $driver->id)->where('status', 'active')->get();
+            $activeOrders = Load::with(['pickUpLocation', 'dropOffLocation'])
+            ->where('driver_id', $driver->id)->where('status', 'active')->get();
             if($activeOrders->isNotEmpty()){
                 return successResponse('Active Orders found successfully', $activeOrders);
             }
@@ -200,6 +223,62 @@ class LoadController extends Controller
             $order->driver->status = ($request->accepted == 1) ? 'not-available' : 'available';
             $order->driver->save();
             return successResponse('Order status has been updated', $order);
+        } catch (\Exception $e) {
+            return errorResponse($e->getMessage(), $e->getCode());
+        }
+    }
+
+    public function startTrip($orderId)
+    {
+        try {
+            $order = Load::where('id', $orderId)->with('driver')->first();
+            if ($order->status == 'active') {
+                $order->status = 'on-going';
+                $order->save();
+                return successResponse('Trip has been started', $order);
+            } else {
+                return errorResponse('The order is not active');
+            }
+        } catch (\Exception $e) {
+            return errorResponse($e->getMessage(), $e->getCode());
+        }
+    }
+
+    public function sendTrackLocation(Request $request, $orderId)
+    {
+        $validatedData = $request->validate([
+            'latitude' => 'required',
+            'longitude' => 'required'
+        ]);
+        try {
+            $order = Load::where('id', $orderId)->with('driver')->first();
+            if ($order->status == 'on-going') {
+                $order->currentLocation()->updateOrCreate(['load_id' => $order->id], [
+                    'latitude' => $validatedData['latitude'],
+                    'longitude' => $validatedData['longitude'],
+                ]);
+                return successResponse('Trip location has been updated', $order);
+            } else {
+                return errorResponse('The order status is not on-going');
+            }
+        } catch (\Exception $e) {
+            return errorResponse($e->getMessage(), $e->getCode());
+        }
+    }
+
+    public function orderDelivered($orderId)
+    {
+        try {
+            $order = Load::where('id', $orderId)->with('driver')->first();
+            if ($order->status == 'on-going') {
+                $order->status = 'delivered';
+                $order->save();
+                $order->driver->status = 'available';
+                $order->driver->save();
+                return successResponse('Trip has been completed', $order);
+            } else {
+                return errorResponse('The order is not on-going');
+            }
         } catch (\Exception $e) {
             return errorResponse($e->getMessage(), $e->getCode());
         }

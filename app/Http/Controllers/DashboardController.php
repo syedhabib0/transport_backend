@@ -71,9 +71,9 @@ class DashboardController extends Controller
                 ->sum('driver_fare');
 
                 $activeOrders = Load::where('driver_id', $driver_id)
-                    ->where('status', 'active')
+                    ->whereIn('status', ['active', 'on-going'])
                     ->orderBy('created_at', 'desc')
-                    ->take(2)
+                    ->take(1)
                     ->get();
 
                 return successResponse('data found', [

@@ -50,4 +50,9 @@ class Load extends Model
     {
         return $this->hasOne(DropOffLocation::class);
     }
+
+    public function currentLocation()
+    {
+        return $this->hasOne(LoadStatus::class);
+    }
 }
