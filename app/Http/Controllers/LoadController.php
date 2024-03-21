@@ -112,20 +112,47 @@ class LoadController extends Controller
 
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function getOnGoingLoads(Request $request)
     {
-        //
+        try {
+            $perPage = $request->get('per_page', 10);
+    
+            $loads = Load::with([
+                'pickUpLocation',
+                'dropOffLocation',
+                'currentLocation',
+                'driver.profile',
+                'driver.user'
+                ])
+            ->where('status', 'on-going')
+            ->paginate($perPage);
+    
+            return response()->json($loads);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'An error occurred while fetching ongoing loads.'], 500);
+        }    
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function show($id)
     {
-        //
+        try {
+            $load = Load::with([
+                'pickUpLocation',
+                'dropOffLocation',
+                'currentLocation',
+                'driver.profile',
+                'driver.user',
+                'driver.vehicles' => function ($query) {
+                    $query->latest()->first();
+                }
+            ])
+            ->where('id', $id)
+            ->first();
+    
+            return successResponse('load fetched successfully', $load);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'An error occurred while fetching ongoing loads.'], 500);
+        }   
     }
 
     /**

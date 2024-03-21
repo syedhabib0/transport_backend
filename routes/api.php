@@ -59,6 +59,8 @@ Route::middleware(['auth:sanctum'])->group(function(){
         Route::get('/', [LoadController::class, 'index']);
         Route::post('/', [LoadController::class, 'store']);
         Route::post('/filter-loads', [LoadController::class, 'filterLoads']);
+        Route::get('/get-on-going-loads', [LoadController::class, 'getOnGoingLoads']);
+        Route::get('/{id}', [LoadController::class, 'show']);
     });    
 
     //mobile routes
