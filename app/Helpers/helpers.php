@@ -118,6 +118,19 @@ if (!function_exists('getDriverStatus')) {
     }
 }
 
+if (!function_exists('getLoadStatus')) {
+    function getLoadStatus()
+    {
+        return [
+            "available" => "Available",
+            "active" => "Active",
+            "on-going" => "On Going",
+            "cancelled" => "Cancelled",
+            "delivered" => "Delivered"
+        ];
+    }
+}
+
 if (!function_exists('sendPushNotification')) {
     function sendPushNotification($title, $body, $fcmToken)
     {

@@ -837,4 +837,21 @@ class DriverController extends Controller
     {
         return successResponse('Driver Statuses fetched successfully', getDriverStatus());
     }
+
+    public function getDriverDropdown()
+    {
+        try {
+            $records = Driver::with('user')->get();
+
+            $data = $records->map(function ($driver) {
+                return [
+                    'id' => $driver->id,
+                    'full_name' => $driver->user->first_name . ' ' . $driver->user->last_name
+                ];
+            });
+            return successResponse('Driver Dropdown listing', $data);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'An error occurred while fetching loads.'], 500);
+        }
+    }
 }

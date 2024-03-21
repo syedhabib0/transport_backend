@@ -70,6 +70,9 @@ Route::middleware(['auth:sanctum'])->group(function(){
 
     // get driver statuses
     Route::get('/get-driver-statuses', [DriverController::class, 'getDriverStatus']);
+    Route::get('/get-load-statuses', [LoadController::class, 'getStatuses']);
+    Route::get('/get-driver-dropdown', [DriverController::class, 'getDriverDropdown']);
+
     // orders routes for mobile app
     Route::group(['prefix'=>'orders'], function() {
         Route::get('/new-orders', [LoadController::class, 'newOrders']);

@@ -15,31 +15,43 @@ class LoadController extends Controller
     public function index(Request $request)
     {
         try {
-            $perPage = $request->get('per_page', 10);
-    
-            // Check if the 'completed' query parameter is present
-            $isCompleted = $request->has('completed');
-    
-            // Eager load the relationships using "with"
-            $loadsQuery = Load::with('driver.profile', 'driver.user');
-    
-            // If 'completed' is true, filter only completed loads
-            if ($isCompleted) {
-                $loadsQuery->where('status', 'completed');
-            }
-    
-            // Paginate the results
-            $loads = $loadsQuery->paginate($perPage);
-    
-            return response()->json([
-                'loads' => $loads->items(),
-                'current_page' => $loads->currentPage(),
-                'last_page' => $loads->lastPage(),
-            ]);
+            $loads = $this->filterLoads($request);
+
+            return response()->json($loads);
         } catch (\Exception $e) {
-            // Handle the exception, log it, or return an error response
-            return response()->json(['error' => $e->getMessage()], 500);
-        }   
+            return response()->json(['error' => 'An error occurred while fetching loads.'], 500);
+        }
+    }
+
+    public function filterLoads(Request $request)
+    {
+        $filters = $request->all();
+        $perPage = $request->get('per_page', 10);
+
+        return Load::with([
+            'driver.profile',
+            'driver.user'
+        ])->when($filters['bill_id'], function ($query) use ($filters) {
+            $query->where('bill_id', $filters['bill_id']);
+        })
+        ->when($filters['driver_id'], function ($query) use ($filters) {
+            $query->where('driver_id', $filters['driver_id']);
+        })
+        ->when($filters['pickup_date'], function ($query) use ($filters) {
+            $query->where('pickup_date', $filters['pickup_date']);
+        })
+        ->when($filters['created_at'], function ($query) use ($filters) {
+            $query->whereDate('created_at', $filters['created_at']);
+        })
+        ->when($filters['total_fare'], function ($query) use ($filters) {
+            $query->where('total_fare', '<' ,$filters['total_fare']);
+        })
+        ->when($filters['driver_fare'], function ($query) use ($filters) {
+            $query->where('driver_fare', '<' , $filters['driver_fare']);
+        })
+        ->when($filters['load_status'], function ($query) use ($filters) {
+            $query->where('status', $filters['load_status']);
+        })->paginate($perPage);
     }
 
     /**
@@ -163,48 +175,6 @@ class LoadController extends Controller
         //
     }
 
-    public function filterLoads(Request $request)
-    {
-        // Retrieve the filter parameters from the request
-        $filters = $request->all();
-
-        // Apply filters to the query
-        $loads = Load::with('driver.profile', 'driver.user')
-        ->when($filters['loadId_filter'], function ($query) use ($filters) {
-            $query->where('id', $filters['loadId_filter']);
-        })
-        ->when($filters['billId_filter'], function ($query) use ($filters) {
-            $query->where('bill_id', $filters['billId_filter']);
-        })
-        ->when($filters['driver_filter'], function ($query) use ($filters) {
-            $query->where('driver_id', $filters['driver_filter']);
-        })
-        ->when($filters['pickupDate_filter'], function ($query) use ($filters) {
-            $query->where('pickup_date', $filters['pickupDate_filter']);
-        })
-        ->when($filters['dropOff_filter'], function ($query) use ($filters) {
-            $query->where('dropoff_location', $filters['dropOff_filter']);
-        })
-        ->when($filters['createdDate_filter'], function ($query) use ($filters) {
-            $query->where('created_at', $filters['createdDate_filter']);
-        })
-        ->when($filters['totalFare_filter'], function ($query) use ($filters) {
-            $query->where('total_fare', $filters['totalFare_filter']);
-        })
-        ->when($filters['driverFare_filter'], function ($query) use ($filters) {
-            $query->where('driver_fare', $filters['driverFare_filter']);
-        })
-        ->when($filters['loadStatus_filter'], function ($query) use ($filters) {
-            $query->where('status', $filters['loadStatus_filter']);
-        });
-        // Add more filters as needed
-
-        // Execute the query
-        $filteredLoads = $loads->get();
-
-        return response()->json(['loads' => $filteredLoads]);
-    }
-
     public function newOrders()
     {
         try {
@@ -308,6 +278,15 @@ class LoadController extends Controller
             }
         } catch (\Exception $e) {
             return errorResponse($e->getMessage(), $e->getCode());
+        }
+    }
+
+    public function getStatuses(Request $request)
+    {
+        try {
+            return successResponse('Load Statuses fetched successfully', getLoadStatus());
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'An error occurred while fetching ongoing loads.'], 500);
         }
     }
 
