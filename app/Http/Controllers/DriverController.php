@@ -29,15 +29,29 @@ class DriverController extends Controller
     }
 
     public function index(Request $request){
-        // Retrieve the "driver" role
         $driverRole = Role::where('name', 'driver')->first();
 
-
-        // Check if the role exists
         if ($driverRole) {
-            $perPage = $request->get('per_page', 10); // You can adjust the default number of items per page
-            // Retrieve all users with the "driver" role
-            $drivers = $driverRole->users()->with('profile', 'driver')->paginate($perPage);
+            $query = $driverRole->users()->with('profile', 'driver');
+
+            if ($request->has('name')) {
+                $query->where(function($query) use ($request) {
+                    $query->whereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ['%' . $request->name . '%']);
+                });
+            }
+
+            if ($request->has('email')) {
+                $query->where('email', 'like', '%' . $request->email . '%');
+            }
+
+            if ($request->has('status')) {
+                $query->whereHas('driver', function ($query) use ($request) {
+                    $query->where('status', $request->status);
+                });
+            }
+
+            $perPage = $request->get('per_page', 10);
+            $drivers = $query->paginate($perPage);
 
             $data = [
                 'drivers' => $drivers->items(),
