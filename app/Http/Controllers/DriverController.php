@@ -789,7 +789,7 @@ class DriverController extends Controller
             $searchLatitude = $request->latitude;
             $searchLongitude = $request->longitude;
             $radiusMiles = $request->radius;
-            $driverLocations = DriverLocation::select('driver_id', 'latitude', 'longitude')
+            $driverLocationsQuery = DriverLocation::select('driver_id', 'latitude', 'longitude')
             ->with(['driver.user'])
             ->whereHas('driver', function ($query) use ($request) {
                 if (!empty($request['driver_status'])) {
@@ -800,17 +800,20 @@ class DriverController extends Controller
                 if (isset($request['truck_type']) && $request['truck_type'] != 'all') {
                     $query->where('vehicle_type', $request['truck_type']);
                 }
-            })
-            ->whereHas('driver.vehicles.otherDetails', function ($query) use ($request) {
-                $query->where('lift_gate', $request['lift_gate'] ?? 0)
-                    ->where('hazmat', $request['hazmat'] ?? 0)
-                    ->where('icc_bar', $request['icc_bar'] ?? 0)
-                    ->where('tsa', $request['tsa'] ?? 0)
-                    ->where('twic', $request['twic'] ?? 0)
-                    ->where('pallet_jack', $request['pallet_jack'] ?? 0)
-                    ->where('true_dock_high', $request['true_dock_high'] ?? 0)
-                    ->where('tanker_endorsement', $request['tanker_endorsement'] ?? 0);
-            })->get();
+            });
+
+            // Check if any of the vehicle details are present in the request
+            $vehicleDetails = array_intersect_key($request->only(['lift_gate', 'hazmat', 'icc_bar', 'tsa', 'twic', 'pallet_jack', 'true_dock_high', 'tanker_endorsement']), array_flip(['lift_gate', 'hazmat', 'icc_bar', 'tsa', 'twic', 'pallet_jack', 'true_dock_high', 'tanker_endorsement']));
+            
+            // If any vehicle detail is present, apply the where clause
+            if (!empty($vehicleDetails)) {
+                $driverLocationsQuery->whereHas('driver.vehicles.otherDetails', function ($query) use ($vehicleDetails) {
+                    $query->where($vehicleDetails);
+                });
+            }
+
+            $driverLocations = $driverLocationsQuery->get();
+
             $distances = [];
             foreach ($driverLocations as $location) {
                 $distance = $this->calculateDistance(

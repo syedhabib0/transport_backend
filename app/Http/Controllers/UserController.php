@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
@@ -178,5 +179,31 @@ class UserController extends Controller
         }
 
         return errorResponse('Unable to update password');
+    }
+
+    public function registration(Request $request)
+    {
+        $request->validate([
+            'first_name' => 'required',
+            'last_name' => 'required',
+            'email' => ['required', 'email', 'unique:'.User::class],
+            'password' => 'required',
+            'confirm_password' => 'required|same:password'
+        ]);
+
+        try {
+            $user = User::create([
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+            ]);
+
+            $role = Role::where('name', 'dispatcher')->first();
+            $user->assignRole($role);
+            return successResponse('User registered successfully.', $user);
+        } catch (\Exception $e) {
+            return errorResponse($e->getMessage(), $e->getCode());
+        }
     }
 }
