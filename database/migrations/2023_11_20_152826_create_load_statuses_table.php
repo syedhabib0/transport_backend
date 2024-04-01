@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('load_statuses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('load_id')->constrained('loads');
-            $table->decimal('latitude', 10, 8);
-            $table->decimal('longitude', 10, 8);
+            $table->decimal('latitude', 16, 8);
+            $table->decimal('longitude', 16, 8);
             $table->timestamps();
         });
     }
