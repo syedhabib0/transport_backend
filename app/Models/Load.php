@@ -24,6 +24,8 @@ class Load extends Model
         'status',
         'total_fare',
         'driver_fare',
+        'pickup_time',
+        'dropoff_time',
     ];
 
     public function driver()

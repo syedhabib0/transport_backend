@@ -871,4 +871,20 @@ class DriverController extends Controller
             return response()->json(['error' => 'An error occurred while fetching loads.'], 500);
         }
     }
+
+    public function blockDriver(Request $request, $id)
+    {
+        $request->validate([
+            'is_blocked' => 'required'
+        ]);
+        try {
+            $driver = $this->driver->where('user_id', $id)->update(['is_blocked' => $request->is_blocked]);
+            if($driver) {
+                return successResponse('Driver block status updated', $driver); 
+            }
+            return errorResponse('Driver not found');
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'An error occurred while fetching loads.'], 500);
+        }
+    }
 }

@@ -71,7 +71,9 @@ class LoadController extends Controller
             'pickup_latitude' => 'required',
             'pickup_longitude' => 'required',
             'drop_off_latitude' => 'required',
-            'drop_off_longitude' => 'required'
+            'drop_off_longitude' => 'required',
+            'pickup_time' => 'required',
+            'dropoff_time' => 'required'
         ]);
 
         $loadExist = Load::where('driver_id', $validatedData['driver'])->whereIn('status', ['active', 'on-going'])->get();
@@ -95,6 +97,8 @@ class LoadController extends Controller
             'pickup_date' => $validatedData['pickup_date'],
             'total_fare' => $validatedData['total_fare'],
             'driver_fare' => $validatedData['driver_fare'],
+            'pickup_time' => $validatedData['pickup_time'],
+            'dropoff_time' => $validatedData['dropoff_time'],
         ]);
 
         $load->pickUpLocation()->updateOrCreate(['load_id' => $load->id], [

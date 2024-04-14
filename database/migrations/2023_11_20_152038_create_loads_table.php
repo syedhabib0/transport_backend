@@ -22,6 +22,8 @@ return new class extends Migration
             $table->string('destination')->nullable();
             $table->string('pickup_location');
             $table->string('dropoff_location');
+            $table->string('pickup_time');
+            $table->string('dropoff_time');
             $table->date('pickup_date')->nullable();
             $table->string('delivery_date')->nullable();
             $table->enum('status', ['available', 'active', 'on-going', 'cancelled', 'delivered'])->default('available');

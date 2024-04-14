@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Driver;
 use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
@@ -19,6 +20,31 @@ class UserController extends Controller
     public function __construct(User $user)
     {
         $this->user = $user;
+    }
+
+    public function webLogin(Request $request){
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        $user = $this->user->with('profile')->where('email',$request->email)->first();
+        $driver = Driver::where('user_id', $user->id)->first();
+        if ($driver) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+        if(!$user || !Hash::check($request->password,$user->password)){
+            return response()->json([
+                'message' => 'Invalid Credentials'
+            ],401);
+        }
+        $user->fcm_token = $request->fcm_token;
+        $user->save();
+        $token = $user->createToken($user->first_name.'-AuthToken')->plainTextToken;
+        return response()->json([
+            'user' => $user,
+            'access_token' => $token,
+        ]);
     }
 
     public function login(Request $request){

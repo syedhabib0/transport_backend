@@ -22,6 +22,7 @@ use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
 */
 // auth routes
 Route::post('/login', [UserController::class, 'login'])->name('loginApi');
+Route::post('/web-login', [UserController::class, 'webLogin']);
 Route::post('/forgot-password', [UserController::class, 'forgotPassword']);
 Route::post('/reset-password', [UserController::class, 'resetPassword']);
 Route::post('/user-registration', [UserController::class, 'registration']);
@@ -55,6 +56,7 @@ Route::middleware(['auth:sanctum'])->group(function(){
         Route::post('/searchDrivers', [DriverController::class, 'searchDrivers']);
         Route::post('/update-truck-detail', [DriverController::class, 'updateDriverTruckDetail']);
         Route::post('/search-driver-locations', [DriverController::class, 'searchDriverLocations']);
+        Route::post('/{id}/block', [DriverController::class, 'blockDriver']);
     });
     
     // Loads Routes

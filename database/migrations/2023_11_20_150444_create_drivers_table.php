@@ -24,6 +24,8 @@ return new class extends Migration
                 'under-our-bid',
                 'suspended'
                 ])->default('available');
+                
+            $table->boolean('is_blocked')->default(0);
             $table->text('note')->nullable();
             $table->text('location')->nullable();
             $table->text('area')->nullable();
