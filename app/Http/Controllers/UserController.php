@@ -29,22 +29,26 @@ class UserController extends Controller
         ]);
 
         $user = $this->user->with('profile')->where('email',$request->email)->first();
-        $driver = Driver::where('user_id', $user->id)->first();
-        if ($driver) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
-        if(!$user || !Hash::check($request->password,$user->password)){
-            return response()->json([
-                'message' => 'Invalid Credentials'
-            ],401);
-        }
-        $user->fcm_token = $request->fcm_token;
-        $user->save();
-        $token = $user->createToken($user->first_name.'-AuthToken')->plainTextToken;
-        return response()->json([
-            'user' => $user,
-            'access_token' => $token,
-        ]);
+        if ($user) {
+            $driver = Driver::where('user_id', $user->id)->first();
+            if($driver){
+                return errorResponse('Unauthorized', 401);
+            } else {
+                if(!$user || !Hash::check($request->password,$user->password)){
+                    return response()->json([
+                        'message' => 'Invalid Credentials'
+                    ],401);
+                }
+                $user->fcm_token = $request->fcm_token;
+                $user->save();
+                $token = $user->createToken($user->first_name.'-AuthToken')->plainTextToken;
+                return response()->json([
+                    'user' => $user,
+                    'access_token' => $token,
+                ]);
+            }
+        } 
+        return errorResponse('Invalid Credentials', 401);
     }
 
     public function login(Request $request){
