@@ -66,6 +66,7 @@ class LoadController extends Controller
             'pickup' => 'required|string',
             'drop_off' => 'required|string',
             'pickup_date' => 'required|date',
+            'delivery_date' => 'nullable|date',
             'total_fare' => 'required|numeric',
             'driver_fare' => 'required|numeric',
             'pickup_latitude' => 'required',
@@ -99,6 +100,7 @@ class LoadController extends Controller
             'driver_fare' => $validatedData['driver_fare'],
             'pickup_time' => $validatedData['pickup_time'],
             'dropoff_time' => $validatedData['dropoff_time'],
+            'delivery_date' => $validatedData['delivery_date'],
         ]);
 
         $load->pickUpLocation()->updateOrCreate(['load_id' => $load->id], [
@@ -158,6 +160,12 @@ class LoadController extends Controller
                 'currentLocation',
                 'driver.profile',
                 'driver.user',
+                'driver.licenseDetails' => function ($query) {
+                    $query->select(['driver_id', 'license_number']);
+                },
+                'driver.hiredBy' => function ($query) {
+                    $query->select(['id', 'first_name', 'last_name']);
+                },
                 'driver.vehicles' => function ($query) {
                     $query->latest()->first();
                 }
@@ -220,6 +228,7 @@ class LoadController extends Controller
         try {
             $order = Load::where('id', $orderId)->with('driver')->first();
             $order->status = ($request->accepted == 1) ? 'active' : 'cancelled';
+            $order->booking_confirmed_at = ($request->accepted == 1) ? now() : null;
             $order->save();
             $order->driver->status = ($request->accepted == 1) ? 'not-available' : 'available';
             $order->driver->save();
@@ -235,6 +244,7 @@ class LoadController extends Controller
             $order = Load::where('id', $orderId)->with('driver')->first();
             if ($order->status == 'active') {
                 $order->status = 'on-going';
+                $order->start_trip_at = now();
                 $order->save();
                 return successResponse('Trip has been started', $order);
             } else {
@@ -273,6 +283,7 @@ class LoadController extends Controller
             $order = Load::where('id', $orderId)->with('driver')->first();
             if ($order->status == 'on-going') {
                 $order->status = 'delivered';
+                $order->end_trip_at = now();
                 $order->save();
                 $order->driver->status = 'available';
                 $order->driver->save();

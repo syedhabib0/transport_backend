@@ -29,6 +29,9 @@ return new class extends Migration
             $table->enum('status', ['available', 'active', 'on-going', 'cancelled', 'delivered'])->default('available');
             $table->decimal('total_fare', 8, 2)->nullable(); // Add this line
             $table->decimal('driver_fare', 8, 2)->nullable(); // Add this line
+            $table->timestamp('booking_confirmed_at')->nullable();
+            $table->timestamp('start_trip_at')->nullable();
+            $table->timestamp('end_trip_at')->nullable();
             $table->timestamps();
         });
     }
