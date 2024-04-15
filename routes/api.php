@@ -28,6 +28,10 @@ Route::post('/reset-password', [UserController::class, 'resetPassword']);
 Route::post('/user-registration', [UserController::class, 'registration']);
 Route::get('/sanctum/csrf-cookie', [CsrfCookieController::class, 'show']);
 
+Route::post('reset-password-mobile', [UserController::class, 'resetPasswordMobile']);
+Route::post('code-verification', [UserController::class, 'codeVerification']);
+Route::post('forgot-password-mobile', [UserController::class, 'forgotPasswordMobile']);
+
 Route::middleware(['auth:sanctum'])->group(function(){
     // logout
     Route::post('/logout', [UserController::class, 'logout']);
@@ -96,6 +100,7 @@ Route::middleware(['auth:sanctum'])->group(function(){
 
     Route::group(['prefix'=>'truck'], function() {
         Route::get('/get-truck-types', [TruckController::class, 'getTruckTypes']);
+        Route::get('/get-truck-types-for-find-truck', [TruckController::class, 'getTruckTypesForFindTruck']);
     }); 
     
 });

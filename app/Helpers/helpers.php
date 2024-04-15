@@ -91,6 +91,22 @@ if (!function_exists('getTruckTypes')) {
     function getTruckTypes()
     {
         return [
+            'sprinter-vans' => 'Sprinter Vans',
+            'box-trucks' => 'Box Trucks',
+            'reefers' => 'Reefers',
+            'hazmat' => 'Hazmat',
+            'straight-trucks' => 'Straight Trucks',
+            'dry-van' => 'Dry Van',
+            'flatbed' => 'Flatbed',
+            'conestoga' => 'Conestoga'
+        ];
+    }
+}
+
+if (!function_exists('getTruckTypesForFindTruck')) {
+    function getTruckTypesForFindTruck()
+    {
+        return [
             'all' => 'All Type',
             'sprinter-vans' => 'Sprinter Vans',
             'box-trucks' => 'Box Trucks',

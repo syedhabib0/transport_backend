@@ -53,22 +53,22 @@ class DashboardController extends Controller
 
                 $driverEarningToday = Load::where('driver_id', $driver_id)
                     ->whereDate('created_at', today())
-                    ->whereNotIn('status', ['cancelled'])
+                    ->where('status', 'delivered')
                     ->sum('driver_fare');
 
                 $driverEarningWeekly = Load::where('driver_id', $driver_id)
                     ->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])
-                    ->whereNotIn('status', ['cancelled'])
+                    ->where('status', 'delivered')
                     ->sum('driver_fare');
 
                 $driverEarningMonthly = Load::where('driver_id', $driver_id)
                     ->whereMonth('created_at', today())
-                    ->whereNotIn('status', ['cancelled'])
+                    ->where('status', 'delivered')
                     ->sum('driver_fare');
 
                 $driverTotalEarning = Load::where('driver_id', $driver_id)
-                ->whereNotIn('status', ['cancelled'])
-                ->sum('driver_fare');
+                    ->where('status', 'delivered')
+                    ->sum('driver_fare');
 
                 $activeOrders = Load::where('driver_id', $driver_id)
                     ->whereIn('status', ['active', 'on-going'])

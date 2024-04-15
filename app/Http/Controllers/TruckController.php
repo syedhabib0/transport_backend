@@ -10,4 +10,9 @@ class TruckController extends Controller
     {
         return successResponse('Truck types fetched successfully', getTruckTypes());
     }
+
+    public function getTruckTypesForFindTruck()
+    {
+        return successResponse('Truck types fetched successfully', getTruckTypesForFindTruck());
+    }
 }

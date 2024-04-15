@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\SendCodeResetPassword;
 use App\Models\Driver;
+use App\Models\ResetCodePassword;
 use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
@@ -12,6 +14,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Mail;
+use Carbon\Carbon;
 
 class UserController extends Controller
 {
@@ -234,6 +238,77 @@ class UserController extends Controller
             return successResponse('User registered successfully.', $user);
         } catch (\Exception $e) {
             return errorResponse($e->getMessage(), $e->getCode());
+        }
+    }
+
+    public function forgotPasswordMobile(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+        ]);
+
+        if ($validator->fails()) {
+            return errorResponse($validator->errors(), 422);
+        }
+
+        ResetCodePassword::where('email', $request->email)->delete();
+        $code = mt_rand(1000, 9999);
+        ResetCodePassword::create([
+            'email' => $request->email,
+            'code' => $code,
+        ]);
+        Mail::to($request->email)->send(new SendCodeResetPassword($code));
+        return successResponse('Password reset Code has been sent to your email.');
+    }
+
+    public function codeVerification(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string|exists:reset_code_passwords',
+        ]);
+
+        $passwordReset = ResetCodePassword::firstWhere('code', $request->code);
+
+        $passwordResetCreatedAt = Carbon::parse($passwordReset->created_at);
+        $expiryTime = $passwordResetCreatedAt->addHour();
+
+        if ($expiryTime->isPast()) {
+            $passwordReset->delete();
+            return errorResponse('Password reset code is expire.', 422);
+        }
+
+        return successResponse('Code verified.', [
+            'code' => $passwordReset->code
+        ], 200);
+
+    }
+
+    /**
+     * Reset Password
+     */
+    public function resetPasswordMobile(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'code' => 'required|string|exists:reset_code_passwords',
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return errorResponse($validator->errors(), 400);
+        } else {
+            $passwordReset = ResetCodePassword::where('code', $request->code)->first();
+            $passwordResetCreatedAt = Carbon::parse($passwordReset->created_at);
+            $expiryTime = $passwordResetCreatedAt->addHour();
+            if ($expiryTime->isPast()) {
+                $passwordReset->delete();
+                return errorResponse('Password reset code is expire.', 422);
+            }
+
+            $user = User::firstWhere('email', $passwordReset->email);
+            $user->update($request->only('password'));
+            $passwordReset->delete();
+
+            return successResponse('Password reset successful.', $user, 200);
         }
     }
 }
