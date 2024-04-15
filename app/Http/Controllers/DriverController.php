@@ -785,12 +785,18 @@ class DriverController extends Controller
             'latitude' => 'required',
             'radius' => 'required',
         ]);
-        try {
+        // try {
             $searchLatitude = $request->latitude;
             $searchLongitude = $request->longitude;
             $radiusMiles = $request->radius;
             $driverLocationsQuery = DriverLocation::select('driver_id', 'latitude', 'longitude')
-            ->with(['driver.user'])
+            ->with([
+                'driver',
+                'driver.user',
+                'driver.vehicles' => function ($query) {
+                    $query->latest()->first();
+                }
+            ])
             ->whereHas('driver', function ($query) use ($request) {
                 if (!empty($request['driver_status'])) {
                     $query->whereIn('status', $request['driver_status']);
@@ -801,7 +807,7 @@ class DriverController extends Controller
                     $query->where('vehicle_type', $request['truck_type']);
                 }
             });
-
+            
             // Check if any of the vehicle details are present in the request
             $vehicleDetails = array_intersect_key($request->only(['lift_gate', 'hazmat', 'icc_bar', 'tsa', 'twic', 'pallet_jack', 'true_dock_high', 'tanker_endorsement']), array_flip(['lift_gate', 'hazmat', 'icc_bar', 'tsa', 'twic', 'pallet_jack', 'true_dock_high', 'tanker_endorsement']));
             
@@ -831,9 +837,9 @@ class DriverController extends Controller
                 return successResponse('Drivers found successfully', $distances);
             }
             return successResponse('Drivers not found');
-        } catch (\Exception $e) {
-            return errorResponse($e->getMessage(), $e->getCode());
-        }
+        // } catch (\Exception $e) {
+        //     return errorResponse($e->getMessage(), $e->getCode());
+        // }
 
     }
 
