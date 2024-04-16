@@ -67,6 +67,7 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::group(['prefix'=>'loads'], function() {
         Route::get('/', [LoadController::class, 'index']);
         Route::post('/', [LoadController::class, 'store']);
+        Route::post('/update-load/{id}', [LoadController::class, 'updateLoad']);
         Route::post('/filter-loads', [LoadController::class, 'filterLoads']);
         Route::get('/get-on-going-loads', [LoadController::class, 'getOnGoingLoads']);
         Route::get('/{id}', [LoadController::class, 'show']);

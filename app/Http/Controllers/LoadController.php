@@ -130,6 +130,60 @@ class LoadController extends Controller
 
     }
 
+    public function updateLoad(Request $request, $id)
+    {
+        $validatedData = $request->validate([
+            'driver_id' => 'nullable|string',
+            'bill_id' => 'nullable|string',
+            'pickup_location' => 'nullable|string',
+            'dropoff_location' => 'nullable|string',
+            'pickup_date' => 'nullable|date',
+            'delivery_date' => 'nullable|date',
+            'total_fare' => 'nullable|numeric',
+            'driver_fare' => 'nullable|numeric',
+            'pickup_latitude' => 'nullable',
+            'pickup_longitude' => 'nullable',
+            'drop_off_latitude' => 'nullable',
+            'drop_off_longitude' => 'nullable',
+            'pickup_time' => 'nullable',
+            'dropoff_time' => 'nullable',
+            'status' => 'nullable'
+        ]);
+    
+        $load = Load::findOrFail($id);
+    
+        // Update load fields if they exist in the validated data
+        $load->fill(array_filter($validatedData))->save();
+    
+        if (!is_null($validatedData['pickup_latitude']) && !is_null($validatedData['pickup_longitude'])) {
+            $load->pickUpLocation()->updateOrCreate(['load_id' => $load->id], [
+                'latitude' => $validatedData['pickup_latitude'],
+                'longitude' => $validatedData['pickup_longitude'],
+            ]);
+    
+            $load->currentLocation()->updateOrCreate(['load_id' => $load->id], [
+                'latitude' => $validatedData['pickup_latitude'],
+                'longitude' => $validatedData['pickup_longitude'],
+            ]);
+        }
+    
+        if (!is_null($validatedData['drop_off_latitude']) && !is_null($validatedData['drop_off_longitude'])) {
+            $load->dropOffLocation()->updateOrCreate(['load_id' => $load->id], [
+                'latitude' => $validatedData['drop_off_latitude'],
+                'longitude' => $validatedData['drop_off_longitude'],
+            ]);
+        }
+    
+        // Send response based on success or failure
+        if ($load) {
+            return successResponse('Load updated successfully', $load);
+        } else {
+            // Failed to update load
+            return response()->json(['success' => false, 'message' => 'Failed to update load'], 500);
+        }
+
+    }
+
     public function getOnGoingLoads(Request $request)
     {
         try {
