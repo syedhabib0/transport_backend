@@ -184,6 +184,27 @@ class LoadController extends Controller
 
     }
 
+    public function deleteLoad($id)
+    {
+        $load = Load::findOrFail($id);
+
+        // Delete related locations
+        $load->pickUpLocation()->delete();
+        $load->dropOffLocation()->delete();
+        $load->currentLocation()->delete();
+
+        // Delete the load itself
+        $deleted = $load->delete();
+
+        // Send response based on success or failure
+        if ($deleted) {
+            return successResponse('Load deleted successfully');
+        } else {
+            // Failed to delete load
+            return response()->json(['success' => false, 'message' => 'Failed to delete load'], 500);
+        }
+    }
+
     public function getOnGoingLoads(Request $request)
     {
         try {
