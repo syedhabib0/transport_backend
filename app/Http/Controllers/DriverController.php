@@ -90,6 +90,9 @@ class DriverController extends Controller
         // Create a new profile associated with the user
         $profile = new Profile([
             'phone' => $request->phone_number,
+            'city' => $request->city,
+            'state' => $request->state,
+            'country' => $request->country,
         ]);
         $user->profile()->save($profile);
 
@@ -145,6 +148,13 @@ class DriverController extends Controller
             'first_name' => $request->input('first_name'),
             'last_name' => $request->input('last_name'),
             // Update other fields as needed
+        ]);
+
+        $profile->update([
+            'phone' => $request->phone_number,
+            'city' => $request->city,
+            'state' => $request->state,
+            'country' => $request->country,
         ]);
 
         return response()->json(['message' => 'Driver updated successfully', 'driver' => $driver]);
@@ -264,6 +274,9 @@ class DriverController extends Controller
                     'phone' => $request->phone,
                     'dob' => $request->dob,
                     'profile_photo' => $fullPath,
+                    'country' => $request->country,
+                    'state' => $request->state,
+                    'city' => $request->city,
                 ]);
                 
                 if($request->note){
