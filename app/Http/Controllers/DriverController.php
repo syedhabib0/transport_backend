@@ -792,9 +792,9 @@ class DriverController extends Controller
             $driverLocationsQuery = DriverLocation::select('driver_id', 'latitude', 'longitude')
             ->with([
                 'driver',
-                'driver.user',
+                'driver.user.profile',
                 'driver.vehicles' => function ($query) {
-                    $query->latest()->first();
+                    $query->latest()->with('otherDetails')->first();
                 }
             ])
             ->whereHas('driver', function ($query) use ($request) {
