@@ -242,63 +242,59 @@ class DriverController extends Controller
             'note' => 'nullable',
         ]);
 
+        $user = User::where('id', $id)->first();
+        $profile = Profile::where('user_id', $id)->first();
+        $driver = Driver::where('user_id', $id)->first();
+        $old_image = $user->profile->profile_photo;
+        $folderPath = "images/users/{$id}_{$request['first_name']}_{$request['last_name']}";
         if ($request->hasFile('profile_picture')) {
-            $user = User::where('id', $id)->first();
-            $profile = Profile::where('user_id', $id)->first();
-            $driver = Driver::where('user_id', $id)->first();
-            $profilePicture = $request->file('profile_picture');
-            
-            $old_image = $user->profile->profile_photo;
             // Retrieve the uploaded file
             $image = request()->file('profile_picture');
     
             // Generate a unique name for the image
             $imageName = "{$id}_photo_" . time() . '.' . $image->getClientOriginalExtension();
-    
-            $folderPath = "images/users/{$id}_{$request['first_name']}_{$request['last_name']}";
+
             if (!file_exists("storage/" . $folderPath)) {
                 mkdir('storage/' . $folderPath, 0777, true);
             }
             
             // Store the image in the specified folder
-            $status = $image->move(public_path('storage/' . $folderPath), $imageName);
+            $image->move(public_path('storage/' . $folderPath), $imageName);
             $fullPath = $folderPath.'/'.$imageName;
+        } else {
+            $fullPath = $old_image ?? null;
+        }
+ 
+            $user->update([
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            ]);
     
-            if($status){    
-                $user->update([
-                'first_name' => $request->first_name,
-                'last_name' => $request->last_name,
-                ]);
-        
-                $profile->update([
-                    'phone' => $request->phone,
-                    'dob' => $request->dob,
-                    'profile_photo' => $fullPath,
-                    'country' => $request->country,
-                    'state' => $request->state,
-                    'city' => $request->city,
-                ]);
-                
-                if($request->note){
-                    $driver->update([
-                        'status' => $request->status,
-                        'note' => $request->note,
-                    ]);
-                }else{
-                    $driver->update([
-                        'status' => $request->status,
-                    ]);
-                }
-            }
+            $profile->update([
+                'phone' => $request->phone,
+                'dob' => $request->dob,
+                'profile_photo' => $fullPath,
+                'country' => $request->country,
+                'state' => $request->state,
+                'city' => $request->city,
+            ]);
             
-            if( $old_image && !empty($old_image) && file_exists('storage/' . $folderPath.DIRECTORY_SEPARATOR.$old_image)){
-                unlink('storage/' . $folderPath.DIRECTORY_SEPARATOR.$old_image);
+            if($request->note){
+                $driver->update([
+                    'status' => $request->status,
+                    'note' => $request->note,
+                ]);
+            }else{
+                $driver->update([
+                    'status' => $request->status,
+                ]);
             }
-    
-            return response()->json(['message' => 'Driver Data updated successfully', 'driver' => $user]);
+        
+        if( $old_image && !empty($old_image) && file_exists('storage/' . $folderPath.DIRECTORY_SEPARATOR.$old_image)){
+            unlink('storage/' . $folderPath.DIRECTORY_SEPARATOR.$old_image);
         }
 
-    
+        return response()->json(['message' => 'Driver Data updated successfully', 'driver' => $user]);
 
     }
     
