@@ -234,7 +234,7 @@ class DriverController extends Controller
             'first_name' => 'required',
             'last_name' => 'required',
             'email' => 'required|email',
-            'profile_picture' => 'required|image|mimes:jpeg,png,jpg,gif',
+            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif',
             'dob' => 'required|date',
             'phone' => 'required',
             'hired_by' => 'nullable',
